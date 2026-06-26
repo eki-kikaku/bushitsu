@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>えき企画サイト（仮）</title>
+    <script src="stations.js"></script>
+
+    <style>
+        body {
+            background-color: #f0f7f6;
+            color: #2c3e50;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #008080;
+            border-bottom: 3px solid #00a497;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #006666;
+            margin-top: 30px;
+        }
+
+        .menu-container {
+            background-color: #e2f0ed;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #00a497;
+        }
+
+        .account-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .change-settings-box {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #00a497;
+            font-size: 13px;
+        }
+
+        .password-container {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+
+        input[type="text"], input[type="password"], select {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #b2d8d8;
+            border-radius: 8px;
+            outline: none;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #008080;
+        }
+
+        .toggle-password-btn {
+            background: none;
+            color: #008080;
+            border: none;
+            padding: 0 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 5px;
+            user-select: none;
+        }
+        .toggle-password-btn:hover {
+            background: none;
+            color: #004d4d;
+        }
+
+        button {
+            background-color: #00a497;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            background-color: #008080;
+        }
+
+        .delete-btn { background-color: #e74c3c; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        .delete-btn:hover { background-color: #c0392b; }
+
+        .add-memo-btn { background-color: #3498db; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        .add-memo-btn:hover { background-color: #2980b9; }
+
+        .own-btn { background-color: #f1c40f; color: #2c3e50; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        .own-btn:hover { background-color: #d4ac0d; }
+
+        .logout-btn { background-color: #7f8c8d; font-size: 14px; padding: 6px 12px; margin-top: 0; }
+        .logout-btn:hover { background-color: #95a5a6; }
+        
+        .setting-btn { background-color: #16a085; font-size: 13px; padding: 6px 12px; }
+        .danger-setting-btn { background-color: #e74c3c; font-size: 13px; padding: 6px 12px; }
+        .danger-setting-btn:hover { background-color: #c0392b; }
+
+        /* こだわりオプションのグリッド配置（ご指定の順番通りに設定） */
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3列に分ける */
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        ul { list-style-type: none; padding: 0; }
+        li {
+            background-color: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>えき企画サイト</h1>
+
+    <div class="menu-container">
+        <details id="menuDetails">
+            <summary style="cursor: pointer; font-weight: bold; color: #006666; font-size: 16px;">👤 アカウントメニュー（ログイン・設定）</summary>
+            
+            <div id="loginFormArea" style="margin-top: 15px;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">🔑 ログイン / 新規登録</p>
+                <input type="text" id="usernameInput" placeholder="ユーザー名">
+                <div class="password-container">
+                    <input type="password" id="passwordInput" placeholder="パスワード">
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('passwordInput', this)">👁️</button>
+                </div>
+                <button onclick="handleAuth()">ログイン / 登録</button>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #7f8c8d;">※初めて入力した名前の場合、そのパスワードで新規登録されます。</p>
+            </div>
+
+            <div id="userInfoArea" class="hidden" style="margin-top: 15px;">
+                <div class="account-info">
+                    <div>
+                        <span style="font-weight: bold; font-size: 16px;" id="welcomeMessage">ゲスト さん</span>
+                        <span style="margin-left: 15px;">所持駅数: <strong id="ownCount">0</strong> 駅</span>
+                    </div>
+                    <button onclick="logout()" class="logout-btn">ログアウト</button>
+                </div>
+
+                <div class="change-settings-box">
+                    <p style="margin: 0 0 5px 0; font-weight: bold; color: #16a085;">🛠️ アカウント設定の変更</p>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <input type="text" id="newUsernameInput" placeholder="新しいユーザー名" style="font-size: 14px; padding: 6px;">
+                        <button onclick="changeUsername()" class="setting-btn">ユーザー名変更</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px; background: #fdfefe; padding: 10px; border-radius: 6px; border: 1px solid #d5dbdb;">
+                        <p style="margin: 0 0 5px 0; font-weight: bold;">🔒 パスワードの変更</p>
+                        <div class="password-container">
+                            <input type="password" id="oldPasswordInput" placeholder="現在のパスワード" style="font-size: 14px; padding: 6px;">
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('oldPasswordInput', this)">👁️</button>
+                        </div>
+                        <div class="password-container">
+                            <input type="password" id="newPasswordInput" placeholder="新しいパスワード" style="font-size: 14px; padding: 6px;">
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPasswordInput', this)">👁️</button>
+                        </div>
+                        <button onclick="changePassword()" class="setting-btn" style="margin-top: 8px; display: block;">パスワード確定</button>
+                    </div>
+
+                    <div style="background: #fdf2f2; padding: 10px; border-radius: 6px; border: 1px solid #f5b7b1;">
+                        <p style="margin: 0 0 5px 0; font-weight: bold; color: #c0392b;">⚠️ アカウントの削除</p>
+                        <p style="margin: 0 0 5px 0; color: #7f8c8d; font-size: 11px;">※登録した所持駅データもすべて消去され、元に戻せなくなります。</p>
+                        <div class="password-container">
+                            <input type="password" id="deletePasswordInput" placeholder="確認のためパスワードを入力" style="font-size: 14px; padding: 6px;">
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('deletePasswordInput', this)">👁️</button>
+                        </div>
+                        <button onclick="deleteAccount()" class="danger-setting-btn" style="margin-top: 8px; display: block;">アカウントを完全に削除する</button>
+                    </div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <div id="mainContent" class="hidden">
+        <h2>駅を探す</h2>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="駅名などを入力...">
+            
+            <select id="searchType">
+                <option value="partial">部分一致</option>
+                <option value="forward">前方一致</option>
+                <option value="backward">後方一致</option>
+                <option value="exact">完全一致</option>
+                <option value="forward_backward">前方後方一致（○…◇）</option> 
+                <option value="length">文字数一致</option>
+            </select>
+            
+            <button onclick="searchStations()">検索</button>
+
+            <details style="margin-top: 15px; background: #eaf2f1; padding: 10px; border-radius: 8px;">
+                <summary style="cursor: pointer; font-weight: bold; color: #2d5a27;">⚙️ こだわり検索オプション（対象・ふりがな）</summary>
+                
+                <div style="margin-top: 10px;">
+                    <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 13px;">🔎 検索する項目（デフォルト：駅名のみ）</p>
+                    
+                    <div class="option-grid">
+                        <div>
+                            <label><input type="checkbox" id="checkName" checked> 駅名</label><br>
+                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkSub"> 副駅名</label>
+                        </div>
+                        <div>
+                            <label><input type="checkbox" id="checkCompany"> 会社名</label><br>
+                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkLine"> 路線名</label>
+                        </div>
+                        <div>
+                            <label><input type="checkbox" id="checkPref"> 都道府県</label><br>
+                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkCity"> 市区町村</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">
+
+                <div>
+                    <label style="font-size: 13px; font-weight: bold; cursor: pointer;">
+                        <input type="checkbox" id="checkKanaSearch"> 📛 ひらがな・カタカナで検索する
+                    </label>
+                    <p style="margin: 3px 0 0 0; font-size: 11px; color: #666;">※チェックすると、入力した文字を「ふりがな」から探します。</p>
+                </div>
+            </details>
+        </div>
+
+        <h3>検索結果</h3>
+        <ul id="searchResults"></ul>
+
+        <hr>
+
+        <h2>駅名の一時メモ（LINE用）</h2>
+        <input type="text" id="stationInput" placeholder="直接入力もできるよ">
+        <button onclick="addStation()">提出リストに追加</button>
+        <ul id="memoList"></ul>
+        <button onclick="copyForLine()" style="width: 100%; margin-top: 15px; font-size: 18px; background-color: #008080;">LINE用に一括コピー</button>
+
+        <h2>マイ所持駅一覧</h2>
+        <ul id="myOwnStationsList"></ul>
+    </div>
+
+    <div id="loginAlertMessage" style="text-align: center; padding: 40px 0; color: #7f8c8d;">
+        <p>⚠️ 上のアカウントメニューからログインすると、駅の検索や所持駅の管理ができます。</p>
+    </div>
+
+    <script>
+        let stationMemo = [];
+        let currentUser = null; 
+
+        window.onload = function() {
+            let sessionUser = sessionStorage.getItem("loginUser");
+            if (sessionUser) {
+                currentUser = sessionUser;
+                showLoggedInUI();
+            }
+        };
+
+        function togglePasswordVisibility(inputId, buttonEl) {
+            let input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                buttonEl.textContent = "🙈"; 
+            } else {
+                input.type = "password";
+                buttonEl.textContent = "👁️"; 
+            }
+        }
+
+        function handleAuth() {
+            let name = document.getElementById("usernameInput").value.trim();
+            let pass = document.getElementById("passwordInput").value.trim();
+
+            if (name === "" || pass === "") {
+                alert("ユーザー名とパスワードを入力してね！");
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+
+            if (users[name]) {
+                if (users[name].password === pass) {
+                    currentUser = name;
+                    sessionStorage.setItem("loginUser", name);
+                    alert("ログインしました！");
+                    showLoggedInUI();
+                } else {
+                    alert("パスワードが違います！");
+                }
+            } else {
+                users[name] = {
+                    password: pass,
+                    myOwnStations: []
+                };
+                localStorage.setItem("webStationUsers", JSON.stringify(users));
+                currentUser = name;
+                sessionStorage.setItem("loginUser", name);
+                alert("新しいアカウントを作成してログインしました！");
+                showLoggedInUI();
+            }
+
+            document.getElementById("usernameInput").value = "";
+            document.getElementById("passwordInput").value = "";
+            resetPasswordInputs(); 
+        }
+
+        function showLoggedInUI() {
+            document.getElementById("loginFormArea").classList.add("hidden");
+            document.getElementById("userInfoArea").classList.remove("hidden");
+            document.getElementById("mainContent").classList.remove("hidden");
+            document.getElementById("loginAlertMessage").classList.add("hidden");
+            
+            document.getElementById("welcomeMessage").textContent = currentUser + " さん";
+            document.getElementById("menuDetails").removeAttribute("open");
+            
+            updateOwnList();
+        }
+
+        function logout() {
+            currentUser = null;
+            sessionStorage.removeItem("loginUser");
+            
+            document.getElementById("loginFormArea").classList.remove("hidden");
+            document.getElementById("userInfoArea").classList.add("hidden");
+            document.getElementById("mainContent").classList.add("hidden");
+            document.getElementById("loginAlertMessage").classList.remove("hidden");
+            
+            document.getElementById("newUsernameInput").value = "";
+            document.getElementById("oldPasswordInput").value = "";
+            document.getElementById("newPasswordInput").value = "";
+            document.getElementById("deletePasswordInput").value = "";
+            
+            let searchResults = document.getElementById("searchResults");
+            if(searchResults) searchResults.innerHTML = "";
+            
+            resetPasswordInputs();
+            alert("ログアウトしました。");
+        }
+
+        function resetPasswordInputs() {
+            let pInputs = ["passwordInput", "oldPasswordInput", "newPasswordInput", "deletePasswordInput"];
+            pInputs.forEach(id => {
+                let el = document.getElementById(id);
+                if(el) el.type = "password";
+            });
+            let pButtons = document.querySelectorAll(".toggle-password-btn");
+            pButtons.forEach(btn => btn.textContent = "👁️");
+        }
+
+        function changeUsername() {
+            let newName = document.getElementById("newUsernameInput").value.trim();
+            if (newName === "") { alert("新しいユーザー名を入力してね！"); return; }
+            if (newName === currentUser) { alert("今と同じ名前ですよ！"); return; }
+
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+            if (users[newName]) {
+                alert("そのユーザー名はすでに他の人に使われています！");
+                return;
+            }
+
+            users[newName] = users[currentUser]; 
+            delete users[currentUser]; 
+            localStorage.setItem("webStationUsers", JSON.stringify(users));
+            
+            currentUser = newName;
+            sessionStorage.setItem("loginUser", newName);
+            
+            document.getElementById("welcomeMessage").textContent = currentUser + " さん";
+            document.getElementById("newUsernameInput").value = "";
+            alert("ユーザー名を「" + newName + "」に変更しました！");
+        }
+
+        function changePassword() {
+            let oldPass = document.getElementById("oldPasswordInput").value.trim();
+            let newPass = document.getElementById("newPasswordInput").value.trim();
+            
+            if (oldPass === "" || newPass === "") { 
+                alert("現在のパスワードと新しいパスワードを両方入力してね！"); 
+                return; 
+            }
+
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+            
+            if (users[currentUser]) {
+                if (users[currentUser].password !== oldPass) {
+                    alert("現在のパスワードが間違っています！");
+                    return;
+                }
+
+                users[currentUser].password = newPass; 
+                localStorage.setItem("webStationUsers", JSON.stringify(users));
+                
+                document.getElementById("oldPasswordInput").value = "";
+                document.getElementById("newPasswordInput").value = "";
+                resetPasswordInputs();
+                alert("パスワードを変更しました！");
+            }
+        }
+
+        function deleteAccount() {
+            let confirmPass = document.getElementById("deletePasswordInput").value.trim();
+            if (confirmPass === "") { 
+                alert("確認のため、現在のパスワードを入力してください。"); 
+                return; 
+            }
+
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+
+            if (users[currentUser]) {
+                if (users[currentUser].password !== confirmPass) {
+                    alert("パスワードが間違っているため、削除できません。");
+                    return;
+                }
+
+                let finalCheck = confirm("本当にアカウントを完全に削除しますか？登録した所持駅データはすべて消去されます。");
+                if (finalCheck) {
+                    delete users[currentUser]; 
+                    localStorage.setItem("webStationUsers", JSON.stringify(users));
+                    alert("アカウントを削除しました。ご利用ありがとうございました！");
+                    logout(); 
+                }
+            }
+        }
+
+        function getOwnStationsArray() {
+            if (!currentUser) return [];
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+            return users[currentUser] ? users[currentUser].myOwnStations : [];
+        }
+
+        function saveOwnStationsArray(arr) {
+            if (!currentUser) return;
+            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
+            if (users[currentUser]) {
+                users[currentUser].myOwnStations = arr;
+                localStorage.setItem("webStationUsers", JSON.stringify(users));
+            }
+        }
+
+        function addOwnStation(stationName) {
+            if (!currentUser) return;
+            let myOwnStations = getOwnStationsArray();
+
+            if (myOwnStations.includes(stationName)) {
+                alert("その駅はすでに所持駅に登録されています！");
+                return;
+            }
+            myOwnStations.push(stationName);
+            saveOwnStationsArray(myOwnStations);
+            updateOwnList();
+        }
+
+        function updateOwnList() {
+            let ownList = document.getElementById("myOwnStationsList");
+            if (!ownList) return;
+            ownList.innerHTML = "";
+            
+            let myOwnStations = getOwnStationsArray();
+            document.getElementById("ownCount").textContent = myOwnStations.length;
+
+            for (let i = 0; i < myOwnStations.length; i++) {
+                let li = document.createElement("li");
+                let span = document.createElement("span");
+                span.textContent = myOwnStations[i];
+                li.appendChild(span);
+
+                let deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "解放";
+                deleteBtn.className = "delete-btn";
+                deleteBtn.onclick = function() {
+                    let currentStations = getOwnStationsArray();
+                    currentStations.splice(i, 1);
+                    saveOwnStationsArray(currentStations);
+                    updateOwnList();
+                };
+                li.appendChild(deleteBtn);
+                ownList.appendChild(li);
+            }
+        }
+
+        // 🔎 アップグレードした検索機能
+        function searchStations() {
+            let searchInput = document.getElementById("searchInput").value.trim();
+            let searchType = document.getElementById("searchType").value;
+            let searchResults = document.getElementById("searchResults");
+            
+            searchResults.innerHTML = "";
+            if (searchInput === "") { alert("検索する文字を入力してね！"); return; }
+
+            let cName = document.getElementById("checkName").checked;
+            let cCompany = document.getElementById("checkCompany").checked;
+            let cLine = document.getElementById("checkLine").checked;
+            let cPref = document.getElementById("checkPref").checked;
+            let cCity = document.getElementById("checkCity").checked;
+            let cSub = document.getElementById("checkSub").checked;
+            let cKanaSearch = document.getElementById("checkKanaSearch").checked;
+
+            if (!cName && !cCompany && !cLine && !cPref && !cCity && !cSub) {
+                alert("検索する項目をどれか1つは選んでね！");
+                return;
+            }
+
+            // スペースまたはカンマ区切りでキーワードを取得
+            let keywords = searchInput.split(/[\s,  ]+/);
+            
+            let nameMatches = [];
+            let otherMatches = [];
+
+            for (let i = 0; i < allStations.length; i++) {
+                let station = allStations[i];
+                let isMatch = false;
+                let matchedByStationName = false;
+
+                for (let k = 0; k < keywords.length; k++) {
+                    let kw = keywords[k];
+                    if (kw === "") continue;
+
+                    // 文字数一致モード
+                    if (searchType === "length") {
+                        let targetLength = parseInt(kw, 10);
+                        if (isNaN(targetLength)) {
+                            alert("文字数検索のときは「2」や「4」のように数字を入力してね！");
+                            return;
+                        }
+                        let nameLen = (cName && station.name.length === targetLength);
+                        let compLen = (cCompany && station.company.length === targetLength);
+                        let lineLen = (cLine && station.line.length === targetLength);
+                        let prefLen = (cPref && station.pref && station.pref.length === targetLength);
+                        let cityLen = (cCity && station.city && station.city.length === targetLength);
+                        let subLen = (cSub && station.subName && station.subName.length === targetLength);
+
+                        if (nameLen || compLen || lineLen || prefLen || cityLen || subLen) {
+                            isMatch = true;
+                            if (nameLen) matchedByStationName = true;
+                            break;
+                        }
+                        continue;
+                    }
+
+                    // 🎯 各判定モード用のチェック関数
+                    function checkText(text) {
+                        if (!text) return false;
+                        if (searchType === "partial") return text.includes(kw);
+                        if (searchType === "forward") return text.startsWith(kw);
+                        if (searchType === "backward") return text.endsWith(kw);
+                        if (searchType === "exact") return text === kw;
+                        
+                        // ✨ 【新モード】前方後方一致（AND条件：1文字目が始まり、最後の文字が終わり）
+                        if (searchType === "forward_backward") {
+                            if (kw.length < 2) {
+                                // 1文字しか入っていない場合は、部分一致と同じ動作にする
+                                return text.includes(kw);
+                            }
+                            let startChar = kw.charAt(0);
+                            let endChar = kw.charAt(kw.length - 1);
+                            return text.startsWith(startChar) && text.endsWith(endChar);
+                        }
+                        return false;
+                    }
+
+                    let hit = false;
+                    let nameHit = false;
+
+                    if (cKanaSearch) {
+                        if (cName) nameHit = checkText(station.kana);
+                        if (cCompany) hit = checkText(station.companyKana);
+                        if (cLine) hit = checkText(station.lineKana);
+                    } else {
+                        if (cName) nameHit = checkText(station.name);
+                        if (cCompany) hit = checkText(station.company);
+                        if (cLine) hit = checkText(station.line);
+                        if (cPref) hit = checkText(station.pref);
+                        if (cCity) hit = checkText(station.city);
+                        if (cSub) hit = checkText(station.subName);
+                    }
+
+                    if (nameHit || hit) {
+                        isMatch = true;
+                        if (nameHit) matchedByStationName = true;
+                        break;
+                    }
+                }
+
+                if (isMatch) {
+                    if (matchedByStationName) nameMatches.push(station);
+                    else otherMatches.push(station);
+                }
+            }
+
+            let finalResults = nameMatches.concat(otherMatches);
+
+            for (let i = 0; i < finalResults.length; i++) {
+                let station = finalResults[i];
+                let li = document.createElement("li");
+                li.style.flexDirection = "column";
+                li.style.alignItems = "stretch";
+
+                let details = document.createElement("details");
+                let summary = document.createElement("summary");
+                summary.style.cursor = "pointer";
+                summary.style.fontWeight = "bold";
+                summary.textContent = station.name + " （" + station.company + "） 🔽 詳細";
+                details.appendChild(summary);
+
+                let infoDiv = document.createElement("div");
+                infoDiv.style.marginTop = "10px";
+                infoDiv.style.padding = "10px";
+                infoDiv.style.backgroundColor = "#eaf2f1";
+                infoDiv.style.borderRadius = "6px";
+                infoDiv.style.fontSize = "14px";
+
+                let sub = station.subName || "なし";
+                let pref = station.pref || "未登録";
+                let city = station.city || "未登録";
+
+                infoDiv.innerHTML = 
+                    "<strong>ふりがな:</strong> " + station.kana + "<br>" +
+                    "<strong>副駅名:</strong> " + sub + "<br>" +
+                    "<strong>会社名:</strong> " + station.company + "<br>" +
+                    "<strong>全路線名:</strong> " + station.line + "<br>" +
+                    "<strong>居場所:</strong> " + pref + " " + city;
+                
+                details.appendChild(infoDiv);
+                li.appendChild(details);
+                
+                let btnGroup = document.createElement("div");
+                btnGroup.className = "btn-group";
+                btnGroup.style.marginTop = "10px";
+                btnGroup.style.justifyContent = "flex-end";
+
+                let fullName = station.name + "（" + station.company + "）";
+
+                let memoButton = document.createElement("button");
+                memoButton.textContent = "リストへ";
+                memoButton.className = "add-memo-btn";
+                memoButton.onclick = function() {
+                    stationMemo.push(fullName);
+                    updateList();
+                };
+                btnGroup.appendChild(memoButton);
+
+                let ownButton = document.createElement("button");
+                ownButton.textContent = "所持駅に登録";
+                ownButton.className = "own-btn";
+                ownButton.onclick = function() {
+                    addOwnStation(fullName);
+                };
+                btnGroup.appendChild(ownButton);
+
+                li.appendChild(btnGroup);
+                searchResults.appendChild(li);
+            }
+
+            if (searchResults.innerHTML === "") searchResults.innerHTML = "<li>見つかりませんでした</li>";
+        }
+
+        function addStation() {
+            let inputArea = document.getElementById("stationInput");
+            let stationName = inputArea.value;
+            if (stationName === "") { alert("駅名を入力してね！"); return; }
+            stationMemo.push(stationName);
+            updateList();
+            inputArea.value = "";
+        }
+
+        function updateList() {
+            let memoList = document.getElementById("memoList");
+            memoList.innerHTML = "";
+            for (let i = 0; i < stationMemo.length; i++) {
+                let li = document.createElement("li");
+                let span = document.createElement("span");
+                span.textContent = stationMemo[i];
+                li.appendChild(span);
+                
+                let deleteButton = document.createElement("button");
+                deleteButton.textContent = "× 削除";
+                deleteButton.className = "delete-btn";
+                deleteButton.onclick = function() { deleteStation(i); };
+                li.appendChild(deleteButton);
+                memoList.appendChild(li);
+            }
+        }
+
+        function deleteStation(index) {
+            stationMemo.splice(index, 1);
+            updateList();
+        }
+
+        function copyForLine() {
+            if (stationMemo.length === 0) { alert("まだ駅名がメモされていません！"); return; }
+            let textForLine = "【今日の提出駅】\n" + stationMemo.join("\n");
+            navigator.clipboard.writeText(textForLine);
+            alert("LINE用にコピーしました！オープンチャットに貼り付けてね。");
+        }
+    </script>
+</body>
+</html>
