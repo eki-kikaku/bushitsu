@@ -2,7 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>えき企画サイト（仮）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>えき企画の部室</title>
     <script src="stations.js"></script>
 
     <style>
@@ -11,7 +13,7 @@
             color: #2c3e50;
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
             line-height: 1.6;
-            padding: 20px;
+            padding: 15px; /* スマホ用に少し余白を狭く */
             max-width: 800px;
             margin: 0 auto;
         }
@@ -20,11 +22,13 @@
             color: #008080;
             border-bottom: 3px solid #00a497;
             padding-bottom: 10px;
+            font-size: 24px; /* スマホで見やすいサイズ */
         }
 
         h2 {
             color: #006666;
-            margin-top: 30px;
+            margin-top: 25px;
+            font-size: 20px;
         }
 
         .menu-container {
@@ -35,11 +39,19 @@
             border-left: 5px solid #00a497;
         }
 
+        /* ログイン後のアカウント情報エリア（スマホでは縦並び、PCでは横並び） */
         .account-info {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
             font-size: 15px;
+        }
+        @media (min-width: 480px) {
+            .account-info {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
         }
 
         .change-settings-box {
@@ -49,20 +61,32 @@
             font-size: 13px;
         }
 
-        .password-container {
-            display: inline-flex;
-            align-items: center;
-            position: relative;
+        /* 入力エリアをスマホで押しやすく並べる箱 */
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
+        /* パスワード入力欄とボタンの横並びをスマホでも維持 */
+        .password-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .password-container input {
+            flex-grow: 1;
+        }
+
+        /* 入力欄やボタンをスマホの横幅いっぱいに広げる */
         input[type="text"], input[type="password"], select {
-            padding: 10px;
+            padding: 12px; /* タップしやすいように少し厚めに */
             font-size: 16px;
             border: 2px solid #b2d8d8;
             border-radius: 8px;
             outline: none;
-            margin-right: 5px;
-            margin-top: 5px;
+            box-sizing: border-box;
+            width: 100%; /* 横幅いっぱい */
         }
 
         input[type="text"]:focus, input[type="password"]:focus {
@@ -73,56 +97,57 @@
             background: none;
             color: #008080;
             border: none;
-            padding: 0 10px;
-            font-size: 18px;
+            padding: 0 12px;
+            font-size: 20px;
             cursor: pointer;
-            margin-top: 5px;
             user-select: none;
-        }
-        .toggle-password-btn:hover {
-            background: none;
-            color: #004d4d;
         }
 
         button {
             background-color: #00a497;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px; /* スマホで押しやすいサイズ */
             font-size: 16px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             transition: 0.2s;
-            margin-top: 5px;
+            width: 100%; /* ボタンも横幅いっぱいに */
         }
 
         button:hover {
             background-color: #008080;
         }
 
-        .delete-btn { background-color: #e74c3c; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        /* 検索結果などのリスト内の小さなボタンは横幅いっぱいにしない */
+        .delete-btn { background-color: #e74c3c; padding: 6px 12px; font-size: 14px; width: auto; }
         .delete-btn:hover { background-color: #c0392b; }
 
-        .add-memo-btn { background-color: #3498db; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        .add-memo-btn { background-color: #3498db; padding: 6px 12px; font-size: 14px; width: auto; }
         .add-memo-btn:hover { background-color: #2980b9; }
 
-        .own-btn { background-color: #f1c40f; color: #2c3e50; padding: 4px 10px; font-size: 14px; margin-left: 5px; margin-top: 0; }
+        .own-btn { background-color: #f1c40f; color: #2c3e50; padding: 6px 12px; font-size: 14px; width: auto; }
         .own-btn:hover { background-color: #d4ac0d; }
 
-        .logout-btn { background-color: #7f8c8d; font-size: 14px; padding: 6px 12px; margin-top: 0; }
+        .logout-btn { background-color: #7f8c8d; font-size: 14px; padding: 8px 16px; width: auto; }
         .logout-btn:hover { background-color: #95a5a6; }
         
-        .setting-btn { background-color: #16a085; font-size: 13px; padding: 6px 12px; }
-        .danger-setting-btn { background-color: #e74c3c; font-size: 13px; padding: 6px 12px; }
+        .setting-btn { background-color: #16a085; font-size: 14px; padding: 8px 16px; width: auto; margin-top: 5px; }
+        .danger-setting-btn { background-color: #e74c3c; font-size: 14px; padding: 8px 16px; width: auto; margin-top: 5px; }
         .danger-setting-btn:hover { background-color: #c0392b; }
 
-        /* こだわりオプションのグリッド配置（ご指定の順番通りに設定） */
+        /* こだわりオプションのグリッド配置（スマホでは2列、少し広くなったら3列） */
         .option-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3列に分ける */
-            gap: 10px;
-            font-size: 13px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            font-size: 14px;
+        }
+        @media (min-width: 480px) {
+            .option-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         ul { list-style-type: none; padding: 0; }
@@ -133,13 +158,21 @@
             border-radius: 6px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column; /* スマホでは上下に並べる */
+            gap: 10px;
+        }
+        @media (min-width: 480px) {
+            li {
+                flex-direction: row; /* パソコンなどでは横並び */
+                justify-content: space-between;
+                align-items: center;
+            }
         }
         
         .btn-group {
             display: flex;
-            gap: 5px;
+            gap: 8px;
+            justify-content: flex-end;
         }
 
         .hidden {
@@ -157,12 +190,14 @@
             
             <div id="loginFormArea" style="margin-top: 15px;">
                 <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">🔑 ログイン / 新規登録</p>
-                <input type="text" id="usernameInput" placeholder="ユーザー名">
-                <div class="password-container">
-                    <input type="password" id="passwordInput" placeholder="パスワード">
-                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('passwordInput', this)">👁️</button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="usernameInput" placeholder="ユーザー名">
+                    <div class="password-container">
+                        <input type="password" id="passwordInput" placeholder="パスワード">
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('passwordInput', this)">👁️</button>
+                    </div>
+                    <button onclick="handleAuth()">ログイン / 登録</button>
                 </div>
-                <button onclick="handleAuth()">ログイン / 登録</button>
                 <p style="margin: 5px 0 0 0; font-size: 12px; color: #7f8c8d;">※初めて入力した名前の場合、そのパスワードで新規登録されます。</p>
             </div>
 
@@ -178,32 +213,34 @@
                 <div class="change-settings-box">
                     <p style="margin: 0 0 5px 0; font-weight: bold; color: #16a085;">🛠️ アカウント設定の変更</p>
                     
-                    <div style="margin-bottom: 12px;">
-                        <input type="text" id="newUsernameInput" placeholder="新しいユーザー名" style="font-size: 14px; padding: 6px;">
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="newUsernameInput" placeholder="新しいユーザー名">
                         <button onclick="changeUsername()" class="setting-btn">ユーザー名変更</button>
                     </div>
                     
                     <div style="margin-bottom: 15px; background: #fdfefe; padding: 10px; border-radius: 6px; border: 1px solid #d5dbdb;">
                         <p style="margin: 0 0 5px 0; font-weight: bold;">🔒 パスワードの変更</p>
-                        <div class="password-container">
-                            <input type="password" id="oldPasswordInput" placeholder="現在のパスワード" style="font-size: 14px; padding: 6px;">
-                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('oldPasswordInput', this)">👁️</button>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="password-container">
+                                <input type="password" id="oldPasswordInput" placeholder="現在のパスワード">
+                                <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('oldPasswordInput', this)">👁️</button>
+                            </div>
+                            <div class="password-container">
+                                <input type="password" id="newPasswordInput" placeholder="新しいパスワード">
+                                <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPasswordInput', this)">👁️</button>
+                            </div>
                         </div>
-                        <div class="password-container">
-                            <input type="password" id="newPasswordInput" placeholder="新しいパスワード" style="font-size: 14px; padding: 6px;">
-                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('newPasswordInput', this)">👁️</button>
-                        </div>
-                        <button onclick="changePassword()" class="setting-btn" style="margin-top: 8px; display: block;">パスワード確定</button>
+                        <button onclick="changePassword()" class="setting-btn" style="margin-top: 8px;">パスワード確定</button>
                     </div>
 
                     <div style="background: #fdf2f2; padding: 10px; border-radius: 6px; border: 1px solid #f5b7b1;">
                         <p style="margin: 0 0 5px 0; font-weight: bold; color: #c0392b;">⚠️ アカウントの削除</p>
-                        <p style="margin: 0 0 5px 0; color: #7f8c8d; font-size: 11px;">※登録した所持駅データもすべて消去され、元に戻せなくなります。</p>
+                        <p style="margin: 0 0 5px 0; color: #7f8c8d; font-size: 11px;">※登録した所持駅データもすべて消去されます。</p>
                         <div class="password-container">
-                            <input type="password" id="deletePasswordInput" placeholder="確認のためパスワードを入力" style="font-size: 14px; padding: 6px;">
+                            <input type="password" id="deletePasswordInput" placeholder="確認のためパスワードを入力">
                             <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('deletePasswordInput', this)">👁️</button>
                         </div>
-                        <button onclick="deleteAccount()" class="danger-setting-btn" style="margin-top: 8px; display: block;">アカウントを完全に削除する</button>
+                        <button onclick="deleteAccount()" class="danger-setting-btn" style="margin-top: 8px;">アカウントを完全に削除する</button>
                     </div>
                 </div>
             </div>
@@ -226,8 +263,8 @@
             
             <button onclick="searchStations()">検索</button>
 
-            <details style="margin-top: 15px; background: #eaf2f1; padding: 10px; border-radius: 8px;">
-                <summary style="cursor: pointer; font-weight: bold; color: #2d5a27;">⚙️ こだわり検索オプション（対象・ふりがな）</summary>
+            <details style="margin-top: 10px; background: #eaf2f1; padding: 10px; border-radius: 8px;">
+                <summary style="cursor: pointer; font-weight: bold; color: #2d5a27;">⚙️ こだわり検索オプション</summary>
                 
                 <div style="margin-top: 10px;">
                     <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 13px;">🔎 検索する項目（デフォルト：駅名のみ）</p>
@@ -235,15 +272,15 @@
                     <div class="option-grid">
                         <div>
                             <label><input type="checkbox" id="checkName" checked> 駅名</label><br>
-                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkSub"> 副駅名</label>
+                            <label style="margin-top: 8px; display:inline-block;"><input type="checkbox" id="checkSub"> 副駅名</label>
                         </div>
                         <div>
                             <label><input type="checkbox" id="checkCompany"> 会社名</label><br>
-                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkLine"> 路線名</label>
+                            <label style="margin-top: 8px; display:inline-block;"><input type="checkbox" id="checkLine"> 路線名</label>
                         </div>
                         <div>
                             <label><input type="checkbox" id="checkPref"> 都道府県</label><br>
-                            <label style="margin-top: 5px; display:inline-block;"><input type="checkbox" id="checkCity"> 市区町村</label>
+                            <label style="margin-top: 8px; display:inline-block;"><input type="checkbox" id="checkCity"> 市区町村</label>
                         </div>
                     </div>
                 </div>
@@ -251,10 +288,9 @@
                 <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">
 
                 <div>
-                    <label style="font-size: 13px; font-weight: bold; cursor: pointer;">
-                        <input type="checkbox" id="checkKanaSearch"> 📛 ひらがな・カタカナで検索する
+                    <label style="font-size: 14px; font-weight: bold; cursor: pointer;">
+                        <input type="checkbox" id="checkKanaSearch"> 📛 ひらがなで検索する
                     </label>
-                    <p style="margin: 3px 0 0 0; font-size: 11px; color: #666;">※チェックすると、入力した文字を「ふりがな」から探します。</p>
                 </div>
             </details>
         </div>
@@ -265,8 +301,10 @@
         <hr>
 
         <h2>駅名の一時メモ（LINE用）</h2>
-        <input type="text" id="stationInput" placeholder="直接入力もできるよ">
-        <button onclick="addStation()">提出リストに追加</button>
+        <div class="search-container">
+            <input type="text" id="stationInput" placeholder="直接入力もできるよ">
+            <button onclick="addStation()">提出リストに追加</button>
+        </div>
         <ul id="memoList"></ul>
         <button onclick="copyForLine()" style="width: 100%; margin-top: 15px; font-size: 18px; background-color: #008080;">LINE用に一括コピー</button>
 
@@ -512,7 +550,6 @@
             }
         }
 
-        // 🔎 アップグレードした検索機能
         function searchStations() {
             let searchInput = document.getElementById("searchInput").value.trim();
             let searchType = document.getElementById("searchType").value;
@@ -534,7 +571,6 @@
                 return;
             }
 
-            // スペースまたはカンマ区切りでキーワードを取得
             let keywords = searchInput.split(/[\s,  ]+/);
             
             let nameMatches = [];
@@ -549,7 +585,6 @@
                     let kw = keywords[k];
                     if (kw === "") continue;
 
-                    // 文字数一致モード
                     if (searchType === "length") {
                         let targetLength = parseInt(kw, 10);
                         if (isNaN(targetLength)) {
@@ -571,7 +606,6 @@
                         continue;
                     }
 
-                    // 🎯 各判定モード用のチェック関数
                     function checkText(text) {
                         if (!text) return false;
                         if (searchType === "partial") return text.includes(kw);
@@ -579,10 +613,8 @@
                         if (searchType === "backward") return text.endsWith(kw);
                         if (searchType === "exact") return text === kw;
                         
-                        // ✨ 【新モード】前方後方一致（AND条件：1文字目が始まり、最後の文字が終わり）
                         if (searchType === "forward_backward") {
                             if (kw.length < 2) {
-                                // 1文字しか入っていない場合は、部分一致と同じ動作にする
                                 return text.includes(kw);
                             }
                             let startChar = kw.charAt(0);
@@ -626,14 +658,12 @@
             for (let i = 0; i < finalResults.length; i++) {
                 let station = finalResults[i];
                 let li = document.createElement("li");
-                li.style.flexDirection = "column";
-                li.style.alignItems = "stretch";
 
                 let details = document.createElement("details");
                 let summary = document.createElement("summary");
                 summary.style.cursor = "pointer";
                 summary.style.fontWeight = "bold";
-                summary.textContent = station.name + " （" + station.company + "） 🔽 詳細";
+                summary.textContent = station.name + " （" + station.company + "） 🔽";
                 details.appendChild(summary);
 
                 let infoDiv = document.createElement("div");
@@ -659,8 +689,6 @@
                 
                 let btnGroup = document.createElement("div");
                 btnGroup.className = "btn-group";
-                btnGroup.style.marginTop = "10px";
-                btnGroup.style.justifyContent = "flex-end";
 
                 let fullName = station.name + "（" + station.company + "）";
 
