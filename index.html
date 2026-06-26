@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>えき企画の部室</title>
+    
+    <link rel="icon" type="image/png" href="icon.png">
+
     <script src="stations.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
         body {
@@ -248,8 +254,6 @@
 
         .hidden { display: none !important; }
     </style>
-        <link rel="icon" href="favicon.ico">
-        <link rel="icon" type="image/png" href="icon.png">
 </head>
 <body>
 
@@ -419,12 +423,39 @@
     </nav>
 
     <script>
+        // 送っていただいたFirebaseの設定情報を適用
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqYW1NqxeVFHGi_b0BqP3bO2RBvHKwlV8",
+            authDomain: "eki-kikaku.firebaseapp.com",
+            databaseURL: "https://eki-kikaku-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "eki-kikaku",
+            storageBucket: "eki-kikaku.firebasestorage.app",
+            messagingSenderId: "911907160417",
+            appId: "1:911907160417:web:2fd6a9c93ccc04fb42c520"
+        };
+
+        // Firebaseの初期化
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         let stationMemo = [];
         let currentUser = null; 
         let isEditMode = false; 
         let combinedStationsList = []; 
+        let allUserData = {}; // サーバーから取得した全ユーザー情報
 
         window.onload = function() {
+            // サーバーのデータとリアルタイム同期を開始
+            database.ref("users").on("value", (snapshot) => {
+                allUserData = snapshot.val() || {};
+                
+                // すでにセッションログインしている場合は、最新状態にリフレッシュ
+                if (currentUser) {
+                    refreshCombinedStations();
+                    updateOwnList();
+                }
+            });
+
             let sessionUser = sessionStorage.getItem("loginUser");
             if (sessionUser) {
                 currentUser = sessionUser;
@@ -492,10 +523,10 @@
             let pass = document.getElementById("passwordInput").value.trim();
 
             if (name === "" || pass === "") { alert("ユーザー名とパスワードを入力してね！"); return; }
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
 
-            if (users[name]) {
-                if (users[name].password === pass) {
+            // サーバー上の最新データで認証
+            if (allUserData[name]) {
+                if (allUserData[name].password === pass) {
                     currentUser = name;
                     sessionStorage.setItem("loginUser", name);
                     alert("ログインしました！");
@@ -505,13 +536,17 @@
                     alert("パスワードが違います！");
                 }
             } else {
-                users[name] = { password: pass, myOwnStations: [], customStations: [] };
-                localStorage.setItem("webStationUsers", JSON.stringify(users));
-                currentUser = name;
-                sessionStorage.setItem("loginUser", name);
-                alert("新しくアカウントを作成してログインしました！");
-                showLoggedInUI();
-                switchPage('search');
+                // 新規登録をサーバーへ保存
+                let newUserData = { password: pass, myOwnStations: [], customStations: [] };
+                database.ref("users/" + name).set(newUserData)
+                .then(() => {
+                    currentUser = name;
+                    sessionStorage.setItem("loginUser", name);
+                    alert("新しくアカウントを作成してサーバーにログインしました！");
+                    showLoggedInUI();
+                    switchPage('search');
+                })
+                .catch((err) => { alert("通信エラーが発生しました"); console.error(err); });
             }
             document.getElementById("usernameInput").value = "";
             document.getElementById("passwordInput").value = "";
@@ -527,9 +562,7 @@
         }
 
         function refreshCombinedStations() {
-            if (!currentUser) { combinedStationsList = [...allStations]; return; }
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            let myCustoms = users[currentUser] ? (users[currentUser].customStations || []) : [];
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? allUserData[currentUser].customStations : [];
             combinedStationsList = allStations.concat(myCustoms);
             combinedStationsList.sort((a, b) => a.kana.localeCompare(b.kana, 'ja'));
         }
@@ -547,11 +580,9 @@
                 return;
             }
 
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            if (!users[currentUser]) return;
-            if (!users[currentUser].customStations) users[currentUser].customStations = [];
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
 
-            let exists = users[currentUser].customStations.some(s => s.name === name && s.company === company) ||
+            let exists = myCustoms.some(s => s.name === name && s.company === company) ||
                          allStations.some(s => s.name === name && s.company === company);
             if (exists) {
                 alert("その駅（または同じ鉄道会社の同名駅）はすでに登録されています！");
@@ -567,18 +598,19 @@
                 subName: sub
             };
 
-            users[currentUser].customStations.push(newStation);
-            localStorage.setItem("webStationUsers", JSON.stringify(users));
-
-            document.getElementById("customPref").value = "";
-            document.getElementById("customCompany").value = "";
-            document.getElementById("customLine").value = "";
-            document.getElementById("customName").value = "";
-            document.getElementById("customKana").value = "";
-            document.getElementById("customSub").value = "";
-
-            refreshCombinedStations(); 
-            alert("「" + name + "」を新しくデータベースに登録しました！");
+            myCustoms.push(newStation);
+            
+            // サーバーを更新
+            database.ref("users/" + currentUser + "/customStations").set(myCustoms)
+            .then(() => {
+                document.getElementById("customPref").value = "";
+                document.getElementById("customCompany").value = "";
+                document.getElementById("customLine").value = "";
+                document.getElementById("customName").value = "";
+                document.getElementById("customKana").value = "";
+                document.getElementById("customSub").value = "";
+                alert("「" + name + "」を新しくデータベースに登録しました！");
+            });
         }
 
         function logout() {
@@ -613,18 +645,20 @@
             if (newName === "") { alert("新しいユーザー名を入力してね！"); return; }
             if (newName === currentUser) { alert("今と同じ名前ですよ！"); return; }
 
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            if (users[newName]) { alert("そのユーザー名はすでに使われています！"); return; }
+            if (allUserData[newName]) { alert("そのユーザー名はすでに使われています！"); return; }
 
-            users[newName] = users[currentUser]; 
-            delete users[currentUser]; 
-            localStorage.setItem("webStationUsers", JSON.stringify(users));
+            let targetData = allUserData[currentUser];
             
-            currentUser = newName;
-            sessionStorage.setItem("loginUser", newName);
-            document.getElementById("welcomeMessage").textContent = currentUser + " さん";
-            document.getElementById("newUsernameInput").value = "";
-            alert("ユーザー名を変更しました！");
+            // サーバー上で古い名前のデータを消して、新しい名前に移動
+            database.ref("users/" + newName).set(targetData)
+            .then(() => {
+                database.ref("users/" + currentUser).remove();
+                currentUser = newName;
+                sessionStorage.setItem("loginUser", newName);
+                document.getElementById("welcomeMessage").textContent = currentUser + " さん";
+                document.getElementById("newUsernameInput").value = "";
+                alert("ユーザー名を変更しました！");
+            });
         }
 
         function changePassword() {
@@ -632,15 +666,16 @@
             let newPass = document.getElementById("newPasswordInput").value.trim();
             if (oldPass === "" || newPass === "") { alert("両方入力してね！"); return; }
 
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            if (users[currentUser]) {
-                if (users[currentUser].password !== oldPass) { alert("現在のパスワードが違います！"); return; }
-                users[currentUser].password = newPass; 
-                localStorage.setItem("webStationUsers", JSON.stringify(users));
-                document.getElementById("oldPasswordInput").value = "";
-                document.getElementById("newPasswordInput").value = "";
-                resetPasswordInputs();
-                alert("パスワードを変更しました！");
+            if (allUserData[currentUser]) {
+                if (allUserData[currentUser].password !== oldPass) { alert("現在のパスワードが違います！"); return; }
+                
+                database.ref("users/" + currentUser + "/password").set(newPass)
+                .then(() => {
+                    document.getElementById("oldPasswordInput").value = "";
+                    document.getElementById("newPasswordInput").value = "";
+                    resetPasswordInputs();
+                    alert("パスワードを変更しました！");
+                });
             }
         }
 
@@ -648,40 +683,34 @@
             let confirmPass = document.getElementById("deletePasswordInput").value.trim();
             if (confirmPass === "") { alert("パスワードを入力してください。"); return; }
 
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            if (users[currentUser]) {
-                if (users[currentUser].password !== confirmPass) { alert("パスワードが違います。"); return; }
+            if (allUserData[currentUser]) {
+                if (allUserData[currentUser].password !== confirmPass) { alert("パスワードが違います。"); return; }
                 if (confirm("本当にアカウントを完全に削除しますか？")) {
-                    delete users[currentUser]; 
-                    localStorage.setItem("webStationUsers", JSON.stringify(users));
-                    alert("アカウントを削除しました。");
-                    logout(); 
+                    database.ref("users/" + currentUser).remove()
+                    .then(() => {
+                        alert("アカウントを削除しました。");
+                        logout(); 
+                    });
                 }
             }
         }
 
         function getOwnStationsArray() {
-            if (!currentUser) return [];
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            return users[currentUser] ? users[currentUser].myOwnStations : [];
+            if (!currentUser || !allUserData[currentUser]) return [];
+            return allUserData[currentUser].myOwnStations || [];
         }
 
         function saveOwnStationsArray(arr) {
             if (!currentUser) return;
-            let users = JSON.parse(localStorage.getItem("webStationUsers")) || {};
-            if (users[currentUser]) {
-                users[currentUser].myOwnStations = arr;
-                localStorage.setItem("webStationUsers", JSON.stringify(users));
-            }
+            database.ref("users/" + currentUser + "/myOwnStations").set(arr);
         }
 
         function addOwnStation(stationName) {
             if (!currentUser) return;
-            let myOwnStations = getOwnStationsArray();
+            let myOwnStations = [...getOwnStationsArray()];
             if (myOwnStations.includes(stationName)) { alert("すでに登録されています！"); return; }
             myOwnStations.push(stationName);
             saveOwnStationsArray(myOwnStations);
-            updateOwnList();
             
             let cleanName = stationName;
             let splitIdx = stationName.indexOf("（");
@@ -795,13 +824,12 @@
                     deleteBtn.className = "delete-btn";
                     deleteBtn.onclick = function() {
                         if(confirm("「" + item.name + "」をマイ駅から削除しますか？")) {
-                            let currentStations = getOwnStationsArray();
+                            let currentStations = [...getOwnStationsArray()];
                             let removeIdx = currentStations.indexOf(item.fullName);
                             if(removeIdx !== -1) {
                                 currentStations.splice(removeIdx, 1);
                                 saveOwnStationsArray(currentStations);
                             }
-                            updateOwnList();
                         }
                     };
                     btnGroup.appendChild(deleteBtn);
