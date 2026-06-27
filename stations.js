@@ -757,7 +757,7 @@ const allStations = [
   { name: "一戸", kana: "いちのへ", pref: "岩手", company: "IGRいわて銀河鉄道", line: "いわて銀河鉄道線", subName: "" },
   { name: "市辺", kana: "いちのべ", pref: "滋賀", company: "近み鉄道", line: "八日市線", subName: "" },
   { name: "一宮", kana: "いちのみや", pref: "香川", company: "高松琴平電気鉄道", line: "琴平線", subName: "" },
-  { name: "暚本", kana: "いちのもと", pref: "奈良", company: "西日本旅客鉄道", line: "桜井線", subName: "" },
+  { name: "櫟本", kana: "いちのもと", pref: "奈良", company: "西日本旅客鉄道", line: "桜井線", subName: "" },
   { name: "一の渡", kana: "いちのわたり", pref: "岩手", company: "三陸鉄道", line: "北リアス線", subName: "" },
   { name: "一ノ割", kana: "いちのわり", pref: "埼玉", company: "東武鉄道", line: "伊勢崎線", subName: "" },
   { name: "市場", kana: "いちば", pref: "兵庫", company: "西日本旅客鉄道", line: "加古川線", subName: "" },
