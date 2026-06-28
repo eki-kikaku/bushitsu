@@ -896,7 +896,7 @@ const allStations = [
   { name: "今福鶴見", kana: "いまふくつるみ", pref: "大阪府", company: "大阪市高速電気軌道", line: "長堀鶴見緑地線", subName: "" },
   { name: "今船", kana: "いまふね", pref: "大阪府", company: "阪堺電気軌道", line: "阪堺線", subName: "" },
   { name: "今別", kana: "いまべつ", pref: "青森県", company: "東日本旅客鉄道", line: "津軽線", subName: "" },
-  { name: "今宮", kana: "いまみや", pref: "北海道", company: "西日本旅客鉄道", line: "関西本線/大阪環状線", subName: "" },
+  { name: "今宮", kana: "いまみや", pref: "大阪府", company: "西日本旅客鉄道", line: "関西本線/大阪環状線", subName: "" },
   { name: "今宮戎", kana: "いまみやえびす", pref: "大阪府", company: "南海電気鉄道", line: "南海本線", subName: "" },
   { name: "伊万里", kana: "いまり", pref: "佐賀県", company: "九州旅客鉄道", line: "筑肥線", subName: "" },
   { name: "伊万里", kana: "いまり", pref: "佐賀県", company: "松浦鉄道", line: "西九州線", subName: "" },
