@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>えき企画の部室</title>
     
-    <link rel="icon" type="image/png" href="icon.png">
-    
     <link class="apple-touch-icon" rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
 
     <script src="stations.js"></script>
 
@@ -265,6 +264,21 @@
             font-size: 14px;
         }
 
+        .log-box {
+            margin-top: 10px;
+            padding: 12px;
+            background: #fffcf9;
+            border: 2px dashed #e67e22;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            font-size: 13px;
+            font-family: monospace;
+            white-space: pre-line;
+            color: #333;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -357,10 +371,25 @@
                 <button id="editToggleBtn" class="edit-toggle-btn" onclick="toggleEditMode()">⚙️ 編集</button>
             </div>
 
-            <button class="action-btn" onclick="copyAllOwnStations()" style="background-color: #34495e; margin-bottom: 12px; font-size: 14px; padding: 10px;">📋 表示中メンバーのマイ駅データを一括コピー</button>
+            <details id="copySectionDetails" style="margin-bottom: 12px; background: #eaf2f1; padding: 10px; border-radius: 8px; border: 1px solid #b2d8d8;">
+                <summary style="cursor: pointer; font-weight: bold; color: #34495e; font-size: 14px;">📋 マイ駅データのコピー・バックアップ（五十音順）</summary>
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                    <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.4;">
+                        ※データ数が非常に多い場合、スマホの限界で一括コピーだと途中で切れることがあります。その場合は以下の<b>「分割コピー」</b>を使うか、一番下のテキストボックスから直接コピーしてください。
+                    </p>
+                    <button class="action-btn" onclick="copyAllOwnStations()" style="background-color: #34495e; font-size: 13px; padding: 8px;">✨ とりあえず一括コピーを試す</button>
+                    
+                    <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #006666;">✂️ 300駅ずつ分けてコピー（おすすめ）:</div>
+                    <div id="splitCopyContainer" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
 
-            <details style="margin-bottom: 12px; background: #eaf2f1; padding: 10px; border-radius: 8px; border: 1px solid #b2d8d8;">
-                <summary style="cursor: pointer; font-weight: bold; color: #e67e22; font-size: 14px;">✨ マイ駅の一括追加（ここを開く）</summary>
+                    <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #c0392b;">📱 最終手段：全データ表示エリア（手動全選択用）:</div>
+                    <textarea id="backupTextArea" rows="4" style="width: 100%; padding: 8px; font-size: 12px; border: 1px solid #b2d8d8; border-radius: 6px; box-sizing: border-box; background: #fafafa; font-family: monospace;" readonly onclick="this.select(); alert('データを全選択しました！そのまま「コピー」を押してください。');"></textarea>
+                    <p style="margin: 0; font-size: 11px; color: #7f8c8d;">※枠内をタップすると自動で全選択状態になります。ボタンでうまくいかない場合はここからコピーしてください。</p>
+                </div>
+            </details>
+
+            <details style="margin-bottom: 12px; background: #fffcf9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22;">
+                <summary style="cursor: pointer; font-weight: bold; color: #e67e22; font-size: 14px;">✨ マイ駅の一括追加（貼り付け）</summary>
                 <div class="search-container" style="background: white; margin-top: 10px; padding: 10px;">
                     <p style="margin: 0 0 8px 0; font-size: 13px; color: #555; line-height: 1.4;">
                         改行ごとに駅名を入力してね！<br>
@@ -369,6 +398,8 @@
                     </p>
                     <textarea id="bulkStationInput" rows="5" style="width: 100%; padding: 10px; border: 2px solid #b2d8d8; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;" placeholder="梅田（阪急電鉄）&#13;難波&#13;東京"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background-color: #e67e22; margin-top: 5px;">まとめてマイ駅に登録</button>
+                    
+                    <div id="bulkResultLog" class="log-box hidden"></div>
                 </div>
             </details>
 
@@ -484,6 +515,7 @@
         let isEditMode = false; 
         let combinedStationsList = []; 
         let allUserData = {};
+        let globallySortedOwnNames = []; // ✨ 一括コピー等で使い回すための五十音順データ保持用
 
         const prefOrder = ["北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"];
         function getPrefIndex(prefName) {
@@ -818,7 +850,12 @@
 
         function getOwnStationsArray(user = currentUser) {
             if (!user || !allUserData[user]) return [];
-            return allUserData[user].myOwnStations || [];
+            let data = allUserData[user].myOwnStations;
+            if (!data) return [];
+            if (!Array.isArray(data)) {
+                return Object.keys(data).sort((a, b) => Number(a) - Number(b)).map(key => data[key]);
+            }
+            return data;
         }
 
         function saveOwnStationsArray(arr) {
@@ -846,16 +883,15 @@
             saveOwnStationsArray(myOwnStations);
         }
 
-        // 📋 マイ駅データの一括コピー(バックアップ)関数を追加
+        // ✨【修正】一括コピーボタンも、最新の五十音順配列(globallySortedOwnNames)を使って書き出します
         function copyAllOwnStations() {
             let targetUser = viewedUser || currentUser;
-            let myOwnNames = getOwnStationsArray(targetUser);
-            if (myOwnNames.length === 0) { alert("コピーするマイ駅がありません。"); return; }
+            if (globallySortedOwnNames.length === 0) { alert("コピーするマイ駅がありません。"); return; }
             
-            let text = myOwnNames.join("\n");
+            let text = globallySortedOwnNames.join("\n");
             navigator.clipboard.writeText(text).then(() => {
-                alert(`【バックアップ完了】\n${targetUser} さんのマイ駅データ (${myOwnNames.length}駅) をクリップボードにコピーしました！\n\nメモ帳などに貼り付けて保存するか、万が一データが消えた時は下の「マイ駅の一括追加」にそのまま貼り付けて復元してください！`);
-            }).catch(() => { alert("コピーに失敗しました。"); });
+                alert(`【一括コピー完了】\n${targetUser} さんのマイ駅データ 全 ${globallySortedOwnNames.length} 駅を「五十音順」でクリップボードにコピーしました！`);
+            }).catch(() => { alert("コピーに失敗しました。下の『手動用エリア』をお使いください。"); });
         }
 
         function addBulkOwnStations() {
@@ -872,44 +908,56 @@
 
             refreshCombinedStations(); 
 
+            let stationLookupMap = {};
+            combinedStationsList.forEach(s => {
+                if (!stationLookupMap[s.name]) stationLookupMap[s.name] = [];
+                stationLookupMap[s.name].push(s);
+            });
+
             lines.forEach(inputLine => {
                 if (inputLine.includes("（") && inputLine.endsWith("）")) {
                     if (myOwnStations.includes(inputLine)) {
-                        reportMessages.push(`⚠️ ${inputLine} は既に登録されています。`);
+                        reportMessages.push(`⚠️ 【重複】${inputLine} は既にマイ駅にあります。`);
                     } else {
                         myOwnStations.push(inputLine);
-                        reportMessages.push(`✅ ${inputLine} を登録しました。`);
+                        reportMessages.push(`✅ 【登録】${inputLine}`);
                     }
                 } else {
-                    let matches = combinedStationsList.filter(s => s.name === inputLine);
+                    let matches = stationLookupMap[inputLine] || [];
                     if (matches.length === 1) {
                         let fullName = `${matches[0].name}（${matches[0].company}）`;
                         if (myOwnStations.includes(fullName)) {
-                            reportMessages.push(`⚠️ ${fullName} は既に登録されています。`);
+                            reportMessages.push(`⚠️ 【重複】${fullName} は既にマイ駅にあります。`);
                         } else {
                             myOwnStations.push(fullName);
-                            reportMessages.push(`✅ ${fullName} を登録しました。`);
+                            reportMessages.push(`✅ 【登録】${fullName}`);
                         }
                     } else if (matches.length > 1) {
                         multipleReports.push(inputLine);
+                        reportMessages.push(`❓ 【保留】「${inputLine}」は複数の鉄道会社に存在するため自動登録できませんでした。`);
                     } else {
-                        reportMessages.push(`❌ ${inputLine} という駅は見つかりませんでした。`);
+                        reportMessages.push(`❌ 【未登録】「${inputLine}」という駅はデータベースに存在しません。`);
                     }
                 }
             });
 
             saveOwnStationsArray(myOwnStations);
             
-            let alertMsg = "";
-            if (reportMessages.length > 0) alertMsg += reportMessages.join("\n");
-            if (multipleReports.length > 0) {
-                alertMsg += "\n\n⚠️ 複数の候補があるため自動登録できなかった駅:\n" + multipleReports.join(", ");
+            let logBox = document.getElementById("bulkResultLog");
+            if (logBox) {
+                let logText = `【一括登録結果ログ — 処理件数: ${lines.length}件】\n`;
+                logText += reportMessages.join("\n");
+                if (multipleReports.length > 0) {
+                    logText += "\n\n⚠️ 【要手動登録】複数の候補がありスキップされた駅:\n" + multipleReports.join(", ");
+                }
+                logBox.textContent = logText;
+                logBox.classList.remove("hidden");
             }
-            alert(alertMsg || "処理が完了しました。");
+            
+            alert(`一括登録が安全に完了しました！（全 ${lines.length} 件）\n詳しい内訳はすぐ下の「一括登録結果ログ」をスクロールして確認してね！`);
             textarea.value = "";
         }
 
-        // 🔄 検索結果をマイ駅一覧と同じアコーディオン形式に修正！
         function searchStations() {
             let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
             let type = document.getElementById("searchType").value;
@@ -932,7 +980,7 @@
                 sourceList = combinedStationsList.filter(s => {
                     let fullName = `${s.name}（${s.company}）`;
                     return checkedMembers.some(member => {
-                        let ownStations = (allUserData[member] && allUserData[member].myOwnStations) || [];
+                        let ownStations = getOwnStationsArray(member);
                         return ownStations.includes(fullName);
                     });
                 });
@@ -974,7 +1022,6 @@
                 let fullName = `${item.name}（${item.company}）`;
                 let li = document.createElement("li");
 
-                // 🔽 マイ駅と同様にdetails / summary構造を復活
                 let details = document.createElement("details");
                 let summary = document.createElement("summary");
                 summary.style.cursor = "pointer";
@@ -987,10 +1034,9 @@
                 div.style.color = "#555";
                 div.style.marginTop = "5px";
 
-                // 全ユーザーの中からこの駅の所持者を割り出し
                 let owners = [];
                 Object.keys(allUserData).sort().forEach(uName => {
-                    let ownStations = (allUserData[uName] && allUserData[uName].myOwnStations) || [];
+                    let ownStations = getOwnStationsArray(uName);
                     if (ownStations.includes(fullName)) {
                         owners.push(uName === currentUser ? `${uName}(自分)` : uName);
                     }
@@ -1010,7 +1056,6 @@
                 details.appendChild(div);
                 li.appendChild(details);
 
-                // ボタンパーツはアクセスの良さを考慮してアコーディオンの外（liの直下）に配置
                 let btnGroup = document.createElement("div");
                 btnGroup.className = "btn-group";
 
@@ -1166,28 +1211,68 @@
 
             document.getElementById("ownCount").textContent = listData.length;
 
+            // 確定ソート（ふりがな順）
+            listData.sort((a, b) => a.kana.localeCompare(b.kana, 'ja'));
+
+            // ✨【修正】ここで生成した五十音順の配列を、グローバル変数に退避
+            globallySortedOwnNames = listData.map(item => item.fullName);
+
+            // コピー領域の描画（すべて五十音順になった globallySortedOwnNames を使用）
+            let splitContainer = document.getElementById("splitCopyContainer");
+            let backupTextarea = document.getElementById("backupTextArea");
+            if (splitContainer && backupTextarea) {
+                splitContainer.innerHTML = "";
+                backupTextarea.value = globallySortedOwnNames.join("\n");
+                
+                if (globallySortedOwnNames.length === 0) {
+                    splitContainer.innerHTML = '<span style="font-size:12px; color:#999;">コピーするマイ駅がありません。</span>';
+                } else {
+                    const chunkSize = 300; 
+                    for (let i = 0; i < globallySortedOwnNames.length; i += chunkSize) {
+                        let chunk = globallySortedOwnNames.slice(i, i + chunkSize);
+                        let startNum = i + 1;
+                        let endNum = Math.min(i + chunkSize, globallySortedOwnNames.length);
+                        
+                        let btn = document.createElement("button");
+                        btn.className = "action-btn";
+                        btn.style.width = "auto";
+                        btn.style.padding = "6px 10px";
+                        btn.style.fontSize = "12px";
+                        btn.style.backgroundColor = "#2980b9";
+                        btn.textContent = `📦 ${startNum}〜${endNum}駅目をコピー`;
+                        
+                        let chunkText = chunk.join("\n");
+                        btn.onclick = () => {
+                            navigator.clipboard.writeText(chunkText).then(() => {
+                                alert(`【分割コピー成功】\n${startNum} 〜 ${endNum} 駅目のデータをコピーしました！`);
+                            }).catch(() => { alert("コピーに失敗しました。下のテキストボックスから手動コピーしてください。"); });
+                        };
+                        splitContainer.appendChild(btn);
+                    }
+                }
+            }
+
             renderStats("statsKana", kanaCounts, "", "〜", "default");
             renderStats("statsKanaEnd", kanaEndCounts, "〜", "", "default"); 
             renderStats("statsPref", prefCounts, "", "", "pref");
             renderStats("statsCompany", companyCounts, "", "", "count");
 
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
+            let displayList = [...listData]; 
             if (keyword !== "") {
-                listData = listData.filter(item => item.fullName.toLowerCase().includes(keyword));
+                displayList = displayList.filter(item => item.fullName.toLowerCase().includes(keyword));
             }
-
-            listData.sort((a, b) => a.kana.localeCompare(b.kana, 'ja'));
 
             let ul = document.getElementById("myOwnStationsList");
             ul.innerHTML = "";
 
-            if (listData.length === 0) {
+            if (displayList.length === 0) {
                 ul.innerHTML = '<li style="color:#7f8c8d; text-align:center;">駅がありません</li>';
                 return;
             }
 
-            for (let i = 0; i < listData.length; i++) {
-                let item = listData[i];
+            for (let i = 0; i < displayList.length; i++) {
+                let item = displayList[i];
                 let li = document.createElement("li");
                 
                 let details = document.createElement("details");
