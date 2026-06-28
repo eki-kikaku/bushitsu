@@ -336,7 +336,7 @@
                     <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
                         <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: bold; color: #008080;">👥 所持メンバーで絞り込み (複数選択可)</p>
                         <div id="searchMemberFilterContainer" style="display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 13px; background: white; padding: 8px; border-radius: 6px; border: 1px solid #b2d8d8;">
-                            </div>
+                        </div>
                     </div>
                 </details>
             </div>
@@ -356,6 +356,8 @@
                 </h2>
                 <button id="editToggleBtn" class="edit-toggle-btn" onclick="toggleEditMode()">⚙️ 編集</button>
             </div>
+
+            <button class="action-btn" onclick="copyAllOwnStations()" style="background-color: #34495e; margin-bottom: 12px; font-size: 14px; padding: 10px;">📋 表示中メンバーのマイ駅データを一括コピー</button>
 
             <details style="margin-bottom: 12px; background: #eaf2f1; padding: 10px; border-radius: 8px; border: 1px solid #b2d8d8;">
                 <summary style="cursor: pointer; font-weight: bold; color: #e67e22; font-size: 14px;">✨ マイ駅の一括追加（ここを開く）</summary>
@@ -503,7 +505,7 @@
                 } else {
                     refreshCombinedStations();
                     updateUserSelect(); 
-                    updateSearchMemberFilters(); // 🌟 メンバー用チェックボックスも動的に更新
+                    updateSearchMemberFilters(); 
                     updateOwnList();
                 }
             });
@@ -569,7 +571,6 @@
             });
         }
 
-        // 🌟 検索タブのこだわり検索内にあるメンバーチェックボックスを生成・維持する関数
         function updateSearchMemberFilters() {
             let container = document.getElementById("searchMemberFilterContainer");
             if (!container) return;
@@ -688,7 +689,7 @@
             if (!viewedUser) viewedUser = currentUser;
             refreshCombinedStations(); 
             updateUserSelect();
-            updateSearchMemberFilters(); // 🌟 ログイン直後にもチェックボックスを準備
+            updateSearchMemberFilters(); 
             updateOwnList();
             updateMemoList();
         }
@@ -845,6 +846,18 @@
             saveOwnStationsArray(myOwnStations);
         }
 
+        // 📋 マイ駅データの一括コピー(バックアップ)関数を追加
+        function copyAllOwnStations() {
+            let targetUser = viewedUser || currentUser;
+            let myOwnNames = getOwnStationsArray(targetUser);
+            if (myOwnNames.length === 0) { alert("コピーするマイ駅がありません。"); return; }
+            
+            let text = myOwnNames.join("\n");
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`【バックアップ完了】\n${targetUser} さんのマイ駅データ (${myOwnNames.length}駅) をクリップボードにコピーしました！\n\nメモ帳などに貼り付けて保存するか、万が一データが消えた時は下の「マイ駅の一括追加」にそのまま貼り付けて復元してください！`);
+            }).catch(() => { alert("コピーに失敗しました。"); });
+        }
+
         function addBulkOwnStations() {
             if (!currentUser) { alert("ログインしてください"); return; }
             
@@ -896,7 +909,7 @@
             textarea.value = "";
         }
 
-        // 🌟 パワーアップした検索ロジック
+        // 🔄 検索結果をマイ駅一覧と同じアコーディオン形式に修正！
         function searchStations() {
             let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
             let type = document.getElementById("searchType").value;
@@ -908,7 +921,6 @@
             let checkPref = document.getElementById("checkPref").checked;
             let checkKana = document.getElementById("checkKana").checked;
 
-            // 🌟 チェックの入っているメンバーを配列で回収
             let checkedMembers = [];
             document.querySelectorAll(".search-member-cb:checked").forEach(cb => {
                 checkedMembers.push(cb.value);
@@ -916,7 +928,6 @@
 
             let sourceList = combinedStationsList;
 
-            // 🌟 もしメンバーにチェックが入っていたら、そのメンバー達の誰かが持っている駅だけで絞り込み
             if (checkedMembers.length > 0) {
                 sourceList = combinedStationsList.filter(s => {
                     let fullName = `${s.name}（${s.company}）`;
@@ -963,18 +974,20 @@
                 let fullName = `${item.name}（${item.company}）`;
                 let li = document.createElement("li");
 
-                let title = document.createElement("div");
-                title.style.fontWeight = "bold";
-                title.textContent = fullName;
-                li.appendChild(title);
+                // 🔽 マイ駅と同様にdetails / summary構造を復活
+                let details = document.createElement("details");
+                let summary = document.createElement("summary");
+                summary.style.cursor = "pointer";
+                summary.style.fontWeight = "bold";
+                summary.textContent = `${fullName} 🔽`;
+                details.appendChild(summary);
 
-                let info = document.createElement("div");
-                info.style.fontSize = "13px";
-                info.style.color = "#666";
-                info.textContent = `${item.pref} / ${item.line} [かな: ${item.kana}]${item.subName ? ` (${item.subName})` : ''}`;
-                li.appendChild(info);
+                let div = document.createElement("div");
+                div.style.fontSize = "14px";
+                div.style.color = "#555";
+                div.style.marginTop = "5px";
 
-                // 🌟 全ユーザーの中からこの駅の所持者を割り出してリストアップ！
+                // 全ユーザーの中からこの駅の所持者を割り出し
                 let owners = [];
                 Object.keys(allUserData).sort().forEach(uName => {
                     let ownStations = (allUserData[uName] && allUserData[uName].myOwnStations) || [];
@@ -983,16 +996,21 @@
                     }
                 });
 
-                let ownerDiv = document.createElement("div");
-                ownerDiv.style.fontSize = "12px";
-                ownerDiv.style.marginTop = "3px";
-                if (owners.length > 0) {
-                    ownerDiv.innerHTML = `👥 所持者: <span style="background-color: #e8f8f5; color: #00a497; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block;">${owners.join(", ")}</span>`;
-                } else {
-                    ownerDiv.innerHTML = `👥 所持者: <span style="color: #999; font-style: italic;">誰も持っていません</span>`;
-                }
-                li.appendChild(ownerDiv);
+                let ownerHtml = owners.length > 0
+                    ? `<span style="background-color: #e8f8f5; color: #00a497; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block;">${owners.join(", ")}</span>`
+                    : `<span style="color: #999; font-style: italic;">誰も持っていません</span>`;
 
+                div.innerHTML = `
+                    <div><strong>かな:</strong> ${item.kana}</div>
+                    <div><strong>都道府県:</strong> ${item.pref}</div>
+                    <div><strong>路線:</strong> ${item.line}</div>
+                    ${item.subName ? `<div><strong>副駅名:</strong> ${item.subName}</div>` : ''}
+                    <div style="margin-top: 6px; font-size: 13px;"><strong>👥 所持者:</strong> ${ownerHtml}</div>
+                `;
+                details.appendChild(div);
+                li.appendChild(details);
+
+                // ボタンパーツはアクセスの良さを考慮してアコーディオンの外（liの直下）に配置
                 let btnGroup = document.createElement("div");
                 btnGroup.className = "btn-group";
 
