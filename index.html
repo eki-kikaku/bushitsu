@@ -537,7 +537,7 @@
 
             <button class="action-btn" onclick="drawGameOdai()" style="font-size: 16px; padding: 14px; background-color: #2980b9; margin-bottom: 12px; box-shadow: 0 4px 0 #1f618d;">🎲 お題を引く</button>
             <button class="action-btn" onclick="copyLastOdai()" style="background-color: #00a497; font-size: 14px; padding: 10px; margin-bottom: 12px;">📋 お題をコピー</button>
-            <button class="action-btn" onclick="copyGameResult()" style="background-color: #34495e; font-size: 14px; padding: 10px; margin-bottom: 20px;">📋 リザルトをコピー</button>
+            <button class="action-btn" onclick="copyGameResult()" style="background-color: #34495e; font-size: 14px; padding: 10px; margin-bottom: 20px;">📋 リザルトをLINEにコピー</button>
 
             <h2>👥 メンバー・得点管理</h2>
             <div class="game-score-table">
@@ -1498,7 +1498,7 @@
             cachedKanjiChars = cachedAllChars.filter(c => /^[\u4E00-\u9FFF]$/.test(c));
         }
 
-        // 👑 对战形式UIの表示切り替え
+        // 👑 対戦形式UIの表示切り替え
         function toggleGameTypeUI() {
             let type = document.getElementById("gameTypeOption").value;
             let membersGroup = document.getElementById("gameTeamMembersGroup");
@@ -1821,7 +1821,6 @@
                 let minusBtn = document.createElement("button");
                 minusBtn.className = "score-btn minus";
                 minusBtn.textContent = "ー";
-                // 🛠 得点が0以下になっても「ー」ボタンで減らせるようにガード条件（if(p.score > 0)）を除去
                 minusBtn.onclick = () => { p.score--; renderParticipants(); };
                 
                 // 得点テキスト窓対応
@@ -1906,24 +1905,50 @@
             let subType = document.getElementById("gameSubOption").value === "yes" ? "副駅名あり" : "副駅名なし";
             let customRules = document.getElementById("gameCustomRulesInput").value.trim();
             
-            let historyText = generateHistoryTextForLine() || "なし";
+            let isTeamMode = (document.getElementById("gameTypeOption").value === "team");
             
+            // 👥 スコア一覧の生成 (コロンを削除して空白区切りに変更)
             let scoreText = gameParticipants.map(p => {
-                let base = `・${p.name}: ${p.score}点`;
-                if (document.getElementById("gameTypeOption").value === "team" && p.members) {
+                let base = `${p.name} ${p.score}点`;
+                if (isTeamMode && p.members) {
                     base += ` (メンバー: ${p.members})`;
                 }
                 return base;
             }).join("\n") || "データなし";
             
-            let text = `【駅名企画 リザルト】\n`;
+            // リザルト共通テキスト
+            let text = `【文字企画 リザルト】\n`;
             text += `現在のターン：${gameTurn}ターン目\n`;
             text += `ルール：${modeText} / ${modeType} / ${subType}\n`;
             if (customRules) {
                 text += `追加ルール説明：${customRules}\n`;
             }
-            text += `\n◆ これまでに出た文字 ◆\n${historyText}\n\n`;
-            text += `◆ スコア一覧 ◆\n${scoreText}`;
+            
+            text += `\n【スコア一覧】\n${scoreText}\n\n`;
+            
+            if (isTeamMode) {
+                // 👥 チーム戦の場合：「出せていない文字」を表示
+                text += `【出せていない文字】\n`;
+                if (gameParticipants.length === 0) {
+                    text += "データなし";
+                } else {
+                    let teamBlocks = [];
+                    gameParticipants.forEach(p => {
+                        let missingList = gameHistory.filter(h => {
+                            return !(h.wonTeams && h.wonTeams.includes(p.name));
+                        }).map(h => `「${h.char}」`);
+                        
+                        let block = `${p.name}\n`;
+                        block += (missingList.length > 0 ? missingList.join("") : "なし");
+                        teamBlocks.push(block);
+                    });
+                    text += teamBlocks.join("\n");
+                }
+            } else {
+                // 👤 個人戦の場合：「これまでに出た文字」を表示
+                let historyText = generateHistoryTextForLine() || "なし";
+                text += `【これまでに出た文字】\n${historyText}`;
+            }
             
             navigator.clipboard.writeText(text).then(() => {
                 alert("リザルトをコピーしました！LINEにそのまま送信できます。");
