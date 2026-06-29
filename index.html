@@ -349,6 +349,17 @@
             background-color: #d1e7e4 !important;
         }
 
+        /* 🛠 追加された操作ボタン用のスタイル */
+        .manual-control-box {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .manual-add-btn { background-color: #e67e22 !important; }
+        .manual-add-btn:hover { background-color: #d35400 !important; }
+        .manual-del-btn { background-color: #7f8c8d !important; }
+        .manual-del-btn:hover { background-color: #2c3e50 !important; }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -475,7 +486,7 @@
             <details style="margin-bottom: 12px; background: #eef7f5; padding: 10px; border-radius: 8px; border: 1px solid #b2d8d8;">
                 <summary style="cursor: pointer; font-weight: bold; color: #008080; font-size: 14px;">📊 マイ駅の統計データ（内訳をみる）</summary>
                 <div class="stats-section">
-                    <div class="stats-title">五十音（始まりの文字）</div>
+                    <div class="stats-title">五十音（始まりの文字</div>
                     <div id="statsKana" class="stats-grid">データがありません</div>
 
                     <div class="stats-title">五十音（終わりの文字）</div>
@@ -504,7 +515,7 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 11px; color: #555; font-weight: bold;">モード</label>
-                        <select id="gameModeOption" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                        <select id="gameModeOption" onchange="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;">
                             <option value="rand">駅名乱数</option>
                             <option value="jouyo">常用漢字</option>
                             <option value="all">全駅文字</option>
@@ -512,14 +523,14 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #555; font-weight: bold;">対戦形式</label>
-                        <select id="gameTypeOption" onchange="toggleGameTypeUI()" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                        <select id="gameTypeOption" onchange="toggleGameTypeUI(); saveGameStateToStorage();" style="padding: 6px; font-size: 13px; margin-top: 4px;">
                             <option value="individual">個人戦</option>
                             <option value="team">チーム戦</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #555; font-weight: bold;">副駅名</label>
-                        <select id="gameSubOption" onchange="initGamePools()" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                        <select id="gameSubOption" onchange="initGamePools(); saveGameStateToStorage();" style="padding: 6px; font-size: 13px; margin-top: 4px;">
                             <option value="no">なし</option>
                             <option value="yes">あり</option>
                         </select>
@@ -527,7 +538,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: #555; font-weight: bold;">追加のルール説明（自由入力欄）</label>
-                    <textarea id="gameCustomRulesInput" rows="2" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、1ターン30秒、等..."></textarea>
+                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、1ターン30秒、等..."></textarea>
                 </div>
             </div>
 
@@ -572,10 +583,29 @@
                 <div id="gameHistoryDiv" class="game-log-box">まだお題を引いていません</div>
                 
                 <div id="teamTogglePanelContainer" class="hidden" style="margin-top: 10px; background: #eaf2f1; border: 2px solid #00a497; padding: 10px; border-radius: 8px;"></div>
-            </div>
+                
+                <div class="manual-control-box">
+                    <button class="action-btn manual-add-btn" onclick="promptManualAddChar()">➕ 文字を手動追加</button>
+                    <button class="action-btn manual-del-btn" onclick="removeLastHistoryChar()">↩️ 最後の1文字を削除</button>
+                </div>
 
-            <div>
-                <button class="action-btn" onclick="resetGame()" style="background-color: #e74c3c; font-size: 14px; padding: 12px;">🔄 リセット</button>
+                <details style="margin-bottom: 15px; background: #fdfaf2; padding: 10px; border-radius: 8px; border: 1px solid #e67e22;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #d35400; font-size: 14px;">📋 主催者データの移行（引き継ぎ呪文）</summary>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.4;">
+                            主催者を交代する場合、下のボタンで現在の状況を「呪文」にしてLINEのノートなどに貼り付けて渡すことができます（文字化けしません）。
+                        </p>
+                        <button class="action-btn" onclick="exportGameToSpell()" style="background-color: #d35400; font-size: 13px; padding: 10px;">✨ 現在の企画データを呪文に変換してコピー</button>
+                        
+                        <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #2c3e50;">📥 呪文から復元する：</div>
+                        <textarea id="gameSpellImportTextArea" rows="3" style="width: 100%; padding: 8px; font-size: 12px; border: 1px solid #b2d8d8; border-radius: 6px;" placeholder="ここに引き継いだ呪文を貼り付けてください..."></textarea>
+                        <button class="action-btn" onclick="importGameFromSpell()" style="background-color: #27ae60; font-size: 13px; padding: 8px;">📥 呪文からデータを復元</button>
+                    </div>
+                </details>
+
+                <div>
+                    <button class="action-btn" onclick="resetGame()" style="background-color: #e74c3c; font-size: 14px; padding: 12px;">🔄 リセット</button>
+                </div>
             </div>
         </div>
 
@@ -714,6 +744,9 @@
                 showLoggedInUI();
                 switchPage('search');
             }
+
+            // 👑 起動時にローカルストレージから企画データを復元
+            loadGameStateFromStorage();
         };
 
         function switchPage(pageName) {
@@ -969,56 +1002,6 @@
             let pInputs = ["passwordInput", "oldPasswordInput", "newPasswordInput", "deletePasswordInput"];
             pInputs.forEach(id => { let el = document.getElementById(id); if(el) el.type = "password"; });
             document.querySelectorAll(".toggle-password-btn").forEach(btn => btn.textContent = "👁️");
-        }
-
-        function changeUsername() {
-            let newName = document.getElementById("newUsernameInput").value.trim();
-            if (newName === "") { alert("新しいユーザー名を入力してね！"); return; }
-            if (newName === currentUser) { alert("今と同じ名前ですよ！"); return; }
-            if (allUserData[newName]) { alert("そのユーザー名はすでに使われています！"); return; }
-
-            let targetData = allUserData[currentUser];
-            database.ref("users/" + newName).set(targetData)
-            .then(() => {
-                database.ref("users/" + currentUser).remove();
-                currentUser = newName;
-                if(viewedUser === currentUser || !viewedUser) viewedUser = newName;
-                localStorage.setItem("persistentLoginUser", newName);
-                sessionStorage.setItem("loginUser", newName);
-                document.getElementById("welcomeMessage").textContent = currentUser + " さん";
-                document.getElementById("newUsernameInput").value = "";
-                alert("ユーザー名を変更しました！");
-            });
-        }
-
-        function changePassword() {
-            let oldPass = document.getElementById("oldPasswordInput").value.trim();
-            let newPass = document.getElementById("newPasswordInput").value.trim();
-            if (oldPass === "" || newPass === "") { alert("両方入力してね！"); return; }
-
-            if (allUserData[currentUser]) {
-                if (allUserData[currentUser].password !== oldPass) { alert("現在のパスワードが違います！"); return; }
-                database.ref("users/" + currentUser + "/password").set(newPass)
-                .then(() => {
-                    document.getElementById("oldPasswordInput").value = "";
-                    document.getElementById("newPasswordInput").value = "";
-                    resetPasswordInputs();
-                    alert("パスワードを変更しました！");
-                });
-            }
-        }
-
-        function deleteAccount() {
-            let confirmPass = document.getElementById("deletePasswordInput").value.trim();
-            if (confirmPass === "") { alert("パスワードを入力してください。"); return; }
-
-            if (allUserData[currentUser]) {
-                if (allUserData[currentUser].password !== confirmPass) { alert("パスワードが違います。"); return; }
-                if (confirm("本当にアカウントを完全に削除しますか？")) {
-                    database.ref("users/" + currentUser).remove()
-                    .then(() => { alert("アカウントを削除しました。"); logout(); });
-                }
-            }
         }
 
         function getOwnStationsArray(user = currentUser) {
@@ -1479,6 +1462,56 @@
             }
         }
 
+        function changeUsername() {
+            let newName = document.getElementById("newUsernameInput").value.trim();
+            if (newName === "") { alert("新しいユーザー名を入力してね！"); return; }
+            if (newName === currentUser) { alert("今と同じ名前ですよ！"); return; }
+            if (allUserData[newName]) { alert("そのユーザー名はすでに使われています！"); return; }
+
+            let targetData = allUserData[currentUser];
+            database.ref("users/" + newName).set(targetData)
+            .then(() => {
+                database.ref("users/" + currentUser).remove();
+                currentUser = newName;
+                if(viewedUser === currentUser || !viewedUser) viewedUser = newName;
+                localStorage.setItem("persistentLoginUser", newName);
+                sessionStorage.setItem("loginUser", newName);
+                document.getElementById("welcomeMessage").textContent = currentUser + " さん";
+                document.getElementById("newUsernameInput").value = "";
+                alert("ユーザー名を変更しました！");
+            });
+        }
+
+        function changePassword() {
+            let oldPass = document.getElementById("oldPasswordInput").value.trim();
+            let newPass = document.getElementById("newPasswordInput").value.trim();
+            if (oldPass === "" || newPass === "") { alert("両方入力してね！"); return; }
+
+            if (allUserData[currentUser]) {
+                if (allUserData[currentUser].password !== oldPass) { alert("現在のパスワードが違います！"); return; }
+                database.ref("users/" + currentUser + "/password").set(newPass)
+                .then(() => {
+                    document.getElementById("oldPasswordInput").value = "";
+                    document.getElementById("newPasswordInput").value = "";
+                    resetPasswordInputs();
+                    alert("パスワードを変更しました！");
+                });
+            }
+        }
+
+        function deleteAccount() {
+            let confirmPass = document.getElementById("deletePasswordInput").value.trim();
+            if (confirmPass === "") { alert("パスワードを入力してください。"); return; }
+
+            if (allUserData[currentUser]) {
+                if (allUserData[currentUser].password !== confirmPass) { alert("パスワードが違います。"); return; }
+                if (confirm("本当にアカウントを完全に削除しますか？")) {
+                    database.ref("users/" + currentUser).remove()
+                    .then(() => { alert("アカウントを削除しました。"); logout(); });
+                }
+            }
+        }
+
         // 👑 企画用のプール作成
         function initGamePools() {
             refreshCombinedStations();
@@ -1498,7 +1531,7 @@
             cachedKanjiChars = cachedAllChars.filter(c => /^[\u4E00-\u9FFF]$/.test(c));
         }
 
-        // 👑 対戦形式UIの表示切り替え
+        // 👑 对戦形式UIの表示切り替え
         function toggleGameTypeUI() {
             let type = document.getElementById("gameTypeOption").value;
             let membersGroup = document.getElementById("gameTeamMembersGroup");
@@ -1569,13 +1602,12 @@
             startSlotAnimation("all", "", 0, finalChar);
         }
 
-        // 👑 3秒間のパタパタアニメーション（100ms間隔×30回＝3秒）
+        // 👑 3秒間のパタパタアニメーション
         function startSlotAnimation(type, finalStation, finalIndex, finalChar) {
             let count = 0;
             let displayEl = document.getElementById("gameOdaisDisplay");
             if (slotInterval) clearInterval(slotInterval);
             
-            // パネルを閉じる
             selectedHistoryIndex = null;
             renderTeamTogglePanel();
 
@@ -1613,19 +1645,17 @@
                         lastOdaiText = `全駅文字モード\n「${finalChar}」`;
                     }
                     
-                    // 履歴にデータを格納（チーム戦用にwonTeams配列を持たせる）
                     gameHistory.push({ mode: modeTitle, char: finalChar, wonTeams: [] });
-                    
-                    // ターン数を自動インクリメント（0から1になる）
                     gameTurn++;
                     document.getElementById("gameTurnSpan").textContent = gameTurn;
                     
                     updateGameHistoryDisplay();
+                    saveGameStateToStorage(); 
                 }
             }, 100); 
         }
 
-        // 👑 履歴表示（5文字ごと改行、10/20カウント、チーム戦装飾）
+        // 👑 履歴表示
         function updateGameHistoryDisplay() {
             let el = document.getElementById("gameHistoryDiv");
             if (!el) return;
@@ -1637,8 +1667,6 @@
             for (let i = 0; i < gameHistory.length; i++) {
                 let h = gameHistory[i];
                 let hasWon = isTeamMode && h.wonTeams && h.wonTeams.length > 0;
-                
-                // 誰かが出した文字は緑のバッジ風にする
                 let bgStyle = hasWon ? "background-color: #d1f2eb; color: #117a65; border: 1px solid #a3e4d7;" : "background-color: #f4f6f7; border: 1px solid #d5dbdb;";
                 
                 html += `<span class="hist-char" style="cursor:pointer; font-weight:bold; ${bgStyle}" onclick="clickHistoryChar(${i})">「${h.char}」</span>`;
@@ -1654,16 +1682,14 @@
             renderTeamTogglePanel();
         }
 
-        // 👑 文字履歴タップ時の処理
         function clickHistoryChar(idx) {
             let isTeamMode = document.getElementById("gameTypeOption").value === "team";
-            if (!isTeamMode) return; // チーム戦以外ではトグルパネルを開かない
+            if (!isTeamMode) return; 
             
             selectedHistoryIndex = idx;
             renderTeamTogglePanel();
         }
 
-        // 👑 獲得チーム切り替えパネルの生成
         function renderTeamTogglePanel() {
             let container = document.getElementById("teamTogglePanelContainer");
             if (!container) return;
@@ -1712,10 +1738,10 @@
                     } else {
                         h.wonTeams.push(p.name);
                     }
-                    // 得点自動計算発火
                     recalculateTeamScores();
                     renderTeamTogglePanel();
                     updateGameHistoryDisplay();
+                    saveGameStateToStorage(); 
                 };
                 btnWrapper.appendChild(btn);
             });
@@ -1738,10 +1764,8 @@
             container.appendChild(btnWrapper);
         }
 
-        // 👑 チーム戦の得点自動計算ロジック
         function recalculateTeamScores() {
             gameParticipants.forEach(p => { p.score = 0; });
-            
             gameHistory.forEach(h => {
                 if (h.wonTeams) {
                     h.wonTeams.forEach(tName => {
@@ -1753,7 +1777,6 @@
             renderParticipants();
         }
 
-        // 👑 参加枠追加（チーム戦はメンバー名も格納）
         function addParticipant() {
             let inputName = document.getElementById("gamePlayerInput");
             let inputMembers = document.getElementById("gamePlayerMembersInput");
@@ -1777,9 +1800,9 @@
             if (isTeamMode) {
                 recalculateTeamScores();
             }
+            saveGameStateToStorage(); 
         }
 
-        // 👑 プレイヤー/チームリストの描画（得点入力のテキスト窓対応、メンバー表示）
         function renderParticipants() {
             let ul = document.getElementById("gamePlayerList");
             ul.innerHTML = "";
@@ -1803,7 +1826,6 @@
                 nameSpan.textContent = p.name;
                 nameContainer.appendChild(nameSpan);
                 
-                // チーム戦メンバーの確認表示
                 if (isTeamMode && p.members) {
                     let membersSpan = document.createElement("span");
                     membersSpan.style.fontSize = "11px";
@@ -1821,9 +1843,8 @@
                 let minusBtn = document.createElement("button");
                 minusBtn.className = "score-btn minus";
                 minusBtn.textContent = "ー";
-                minusBtn.onclick = () => { p.score--; renderParticipants(); };
+                minusBtn.onclick = () => { p.score--; renderParticipants(); saveGameStateToStorage(); };
                 
-                // 得点テキスト窓対応
                 let scoreInput = document.createElement("input");
                 scoreInput.type = "number";
                 scoreInput.style.width = "55px";
@@ -1837,12 +1858,13 @@
                 scoreInput.oninput = (e) => {
                     let val = parseInt(e.target.value);
                     p.score = isNaN(val) ? 0 : val;
+                    saveGameStateToStorage();
                 };
                 
                 let plusBtn = document.createElement("button");
                 plusBtn.className = "score-btn";
                 plusBtn.textContent = "＋";
-                plusBtn.onclick = () => { p.score++; renderParticipants(); };
+                plusBtn.onclick = () => { p.score++; renderParticipants(); saveGameStateToStorage(); };
                 
                 let delBtn = document.createElement("button");
                 delBtn.className = "delete-btn";
@@ -1853,6 +1875,7 @@
                     gameParticipants.splice(idx, 1); 
                     if (isTeamMode) recalculateTeamScores();
                     renderParticipants(); 
+                    saveGameStateToStorage();
                 };
                 
                 rightDiv.appendChild(minusBtn);
@@ -1866,14 +1889,13 @@
             });
         }
 
-        // 👑 ターン数手動変更
         function changeTurn(val) {
             gameTurn += val;
             if (gameTurn < 0) gameTurn = 0;
             document.getElementById("gameTurnSpan").textContent = gameTurn;
+            saveGameStateToStorage(); 
         }
 
-        // 👑 単発お題のLINEコピー
         function copyLastOdai() {
             if (!lastOdaiText) { alert("まだお題を引いていません！"); return; }
             navigator.clipboard.writeText(lastOdaiText).then(() => {
@@ -1881,7 +1903,6 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
-        // 👑 LINE配信用履歴テキスト整形
         function generateHistoryTextForLine() {
             let text = "";
             for (let i = 0; i < gameHistory.length; i++) {
@@ -1897,7 +1918,6 @@
             return text.trim();
         }
 
-        // 👑 企画全体のリザルトLINE用コピー
         function copyGameResult() {
             let modeSelector = document.getElementById("gameModeOption");
             let modeText = modeSelector.options[modeSelector.selectedIndex].text;
@@ -1907,7 +1927,6 @@
             
             let isTeamMode = (document.getElementById("gameTypeOption").value === "team");
             
-            // 👥 スコア一覧の生成 (コロンを削除して空白区切りに変更)
             let scoreText = gameParticipants.map(p => {
                 let base = `${p.name} ${p.score}点`;
                 if (isTeamMode && p.members) {
@@ -1916,7 +1935,6 @@
                 return base;
             }).join("\n") || "データなし";
             
-            // リザルト共通テキスト
             let text = `【文字企画 リザルト】\n`;
             text += `現在のターン：${gameTurn}ターン目\n`;
             text += `ルール：${modeText} / ${modeType} / ${subType}\n`;
@@ -1927,7 +1945,6 @@
             text += `\n【スコア一覧】\n${scoreText}\n\n`;
             
             if (isTeamMode) {
-                // 👥 チーム戦の場合：「出せていない文字」を表示
                 text += `【出せていない文字】\n`;
                 if (gameParticipants.length === 0) {
                     text += "データなし";
@@ -1945,7 +1962,6 @@
                     text += teamBlocks.join("\n");
                 }
             } else {
-                // 👤 個人戦の場合：「これまでに出た文字」を表示
                 let historyText = generateHistoryTextForLine() || "なし";
                 text += `【これまでに出た文字】\n${historyText}`;
             }
@@ -1955,7 +1971,175 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
-        // 👑 企画リセット
+        // 👑 企画データの永続化ロジック (localStorage)
+        function saveGameStateToStorage() {
+            let state = {
+                gameHistory: gameHistory,
+                gameParticipants: gameParticipants,
+                lastOdaiText: lastOdaiText,
+                gameTurn: gameTurn,
+                gameModeOption: document.getElementById("gameModeOption").value,
+                gameTypeOption: document.getElementById("gameTypeOption").value,
+                gameSubOption: document.getElementById("gameSubOption").value,
+                gameCustomRulesInput: document.getElementById("gameCustomRulesInput").value,
+                gameOdaisDisplayHtml: document.getElementById("gameOdaisDisplay").innerHTML
+            };
+            localStorage.setItem("saved_文字企画_state", JSON.stringify(state));
+        }
+
+        function loadGameStateFromStorage() {
+            let raw = localStorage.getItem("saved_文字企画_state");
+            if (!raw) return;
+            try {
+                let state = JSON.parse(raw);
+                gameHistory = state.gameHistory || [];
+                gameParticipants = state.gameParticipants || [];
+                lastOdaiText = state.lastOdaiText || "";
+                gameTurn = state.gameTurn || 0;
+                
+                if(state.gameModeOption) document.getElementById("gameModeOption").value = state.gameModeOption;
+                if(state.gameTypeOption) document.getElementById("gameTypeOption").value = state.gameTypeOption;
+                if(state.gameSubOption) document.getElementById("gameSubOption").value = state.gameSubOption;
+                if(state.gameCustomRulesInput) document.getElementById("gameCustomRulesInput").value = state.gameCustomRulesInput;
+                if(state.gameOdaisDisplayHtml) document.getElementById("gameOdaisDisplay").innerHTML = state.gameOdaisDisplayHtml;
+                
+                document.getElementById("gameTurnSpan").textContent = gameTurn;
+                
+                toggleGameTypeUI(); 
+            } catch(e) {
+                console.error("データの復元に失敗しました", e);
+            }
+        }
+
+        // 🛠 手動で文字履歴に文字を追加するボタン機能
+        function promptManualAddChar() {
+            let char = prompt("手動で履歴に追加したい「文字」を1文字入力してください。");
+            if (char === null) return; 
+            char = char.trim();
+            if (char.length !== 1) {
+                alert("文字履歴には1文字ずつしか追加できません！");
+                return;
+            }
+            
+            gameHistory.push({ mode: "手動追加", char: char, wonTeams: [] });
+            gameTurn++;
+            document.getElementById("gameTurnSpan").textContent = gameTurn;
+            
+            updateGameHistoryDisplay();
+            saveGameStateToStorage();
+            alert(`「${char}」を履歴の最後に追加しました。`);
+        }
+
+        // 🛠 最後の文字を1件削除するボタン機能
+        function removeLastHistoryChar() {
+            if (gameHistory.length === 0) {
+                alert("削除する文字履歴がありません！");
+                return;
+            }
+            
+            let lastItem = gameHistory[gameHistory.length - 1];
+            if (confirm(`最後に登録された文字 「${lastItem.char}」 を履歴から削除しますか？\n(ターン数も1つ戻ります)`)) {
+                gameHistory.pop();
+                if (gameTurn > 0) gameTurn--;
+                document.getElementById("gameTurnSpan").textContent = gameTurn;
+                
+                selectedHistoryIndex = null;
+                
+                let isTeamMode = document.getElementById("gameTypeOption").value === "team";
+                if (isTeamMode) {
+                    recalculateTeamScores();
+                }
+                
+                updateGameHistoryDisplay();
+                saveGameStateToStorage();
+                alert("最後の1文字を削除しました。");
+            }
+        }
+
+        // 🔮 【新規追加】データを引き継ぎ呪文にエクスポートする機能
+        function exportGameToSpell() {
+            let stateToExport = {
+                gameHistory: gameHistory,
+                gameParticipants: gameParticipants,
+                lastOdaiText: lastOdaiText,
+                gameTurn: gameTurn,
+                gameModeOption: document.getElementById("gameModeOption").value,
+                gameTypeOption: document.getElementById("gameTypeOption").value,
+                gameSubOption: document.getElementById("gameSubOption").value,
+                gameCustomRulesInput: document.getElementById("gameCustomRulesInput").value,
+                gameOdaisDisplayHtml: document.getElementById("gameOdaisDisplay").innerHTML
+            };
+
+            try {
+                // 安全性と文字化け回避のため、JSON化したテキストをBase64という「英数字のみの長い呪文」に変換します
+                let jsonStr = JSON.stringify(stateToExport);
+                let utf8Bytes = new TextEncoder().encode(jsonStr);
+                let binaryStr = "";
+                for (let i = 0; i < utf8Bytes.length; i++) {
+                    binaryStr += String.fromCharCode(utf8Bytes[i]);
+                }
+                let spellText = btoa(binaryStr);
+
+                navigator.clipboard.writeText(spellText).then(() => {
+                    alert("【呪文のコピー成功！】\n現在のデータを引き継ぎ用の呪文（英数字の羅列）に変換してクリップボードにコピーしました！そのままLINEのノートやチャットに貼り付けてください。");
+                }).catch(() => {
+                    alert("クリップボードへの自動コピーに失敗しました。スマホの設定を確認してください。");
+                });
+            } catch (e) {
+                alert("データの変換中にエラーが発生しました。");
+                console.error(e);
+            }
+        }
+
+        // 🔮 【新規追加】引き継ぎ呪文からデータを復元するインポート機能
+        function importGameFromSpell() {
+            let textarea = document.getElementById("gameSpellImportTextArea");
+            let spellText = textarea.value.trim();
+            
+            if (!spellText) {
+                alert("引き継ぎたい呪文をテキストエリアに入力（貼り付け）してください！");
+                return;
+            }
+
+            if (!confirm("呪文からデータを復元しますか？\n（現在このスマホに保存されている企画データは上書きされて消去されます）")) return;
+
+            try {
+                // 英数字の羅列（Base64）から元の日本語データ（JSON）に復元します
+                let binaryStr = atob(spellText);
+                let utf8Bytes = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                    utf8Bytes[i] = binaryStr.charCodeAt(i);
+                }
+                let jsonStr = new TextDecoder().decode(utf8Bytes);
+                let decodedState = JSON.parse(jsonStr);
+
+                // 各変数の復元
+                gameHistory = decodedState.gameHistory || [];
+                gameParticipants = decodedState.gameParticipants || [];
+                lastOdaiText = decodedState.lastOdaiText || "";
+                gameTurn = decodedState.gameTurn || 0;
+
+                if(decodedState.gameModeOption) document.getElementById("gameModeOption").value = decodedState.gameModeOption;
+                if(decodedState.gameTypeOption) document.getElementById("gameTypeOption").value = decodedState.gameTypeOption;
+                if(decodedState.gameSubOption) document.getElementById("gameSubOption").value = decodedState.gameSubOption;
+                if(decodedState.gameCustomRulesInput) document.getElementById("gameCustomRulesInput").value = decodedState.gameCustomRulesInput;
+                if(decodedState.gameOdaisDisplayHtml) document.getElementById("gameOdaisDisplay").innerHTML = decodedState.gameOdaisDisplayHtml;
+
+                document.getElementById("gameTurnSpan").textContent = gameTurn;
+                selectedHistoryIndex = null;
+
+                // 画面をリフレッシュして最新化
+                toggleGameTypeUI();
+                saveGameStateToStorage(); // 復元したデータをローカルストレージにも保存
+
+                textarea.value = ""; // 入力欄をクリア
+                alert("🎉 【引き継ぎ完了】\n呪文から企画データを文字化けなしで100%復元しました！そのまま企画を再開できます。");
+            } catch (e) {
+                alert("❌ 【エラー】\n呪文が正しくありません。コピーしたテキストに余計な文字が混ざっていないか、途中で切れていないか確認してください。");
+                console.error(e);
+            }
+        }
+
         function resetGame() {
             if (!confirm("現在のターン数、参加者、得点、履歴をすべてリセットしますか？")) return;
             if (!confirm("本当に、本当にリセットしますか？（データは元に戻せません）")) return;
@@ -1967,6 +2151,9 @@
             document.getElementById("gameTurnSpan").textContent = gameTurn;
             document.getElementById("gameCustomRulesInput").value = "";
             document.getElementById("gameOdaisDisplay").innerHTML = `<span style="color:#bdc3c7;">ボタンを押してお題を引いてね！</span>`;
+            
+            localStorage.removeItem("saved_文字企画_state"); 
+            
             updateGameHistoryDisplay();
             renderParticipants();
         }
