@@ -552,7 +552,7 @@
 
             <h2>👥 メンバー・得点管理</h2>
             <div class="game-score-table">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #eaf2f1; padding-bottom: 8px;">
+                <div style="display: flex; justify- nudge-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #eaf2f1; padding-bottom: 8px;">
                     <span style="font-weight: bold; font-size: 14px; color: #34495e;">現在のターン数（自動カウント）</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <button class="score-btn minus" onclick="changeTurn(-1)" style="width:26px; height:26px; font-size:12px;">ー</button>
@@ -590,16 +590,16 @@
                 </div>
 
                 <details style="margin-bottom: 15px; background: #fdfaf2; padding: 10px; border-radius: 8px; border: 1px solid #e67e22;">
-                    <summary style="cursor: pointer; font-weight: bold; color: #d35400; font-size: 14px;">📋 主催者データの移行（引き継ぎ呪文）</summary>
+                    <summary style="cursor: pointer; font-weight: bold; color: #d35400; font-size: 14px;">📋 主催者データの移行（引き継ぎテキスト）</summary>
                     <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                         <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.4;">
-                            主催者を交代する場合、下のボタンで現在の状況を「呪文」にしてLINEのノートなどに貼り付けて渡すことができます（文字化けしません）。
+                            主催者を交代する場合、下のボタンで現在の状況をスッキリしたテキストデータにしてLINEなどで渡すことができます。
                         </p>
-                        <button class="action-btn" onclick="exportGameToSpell()" style="background-color: #d35400; font-size: 13px; padding: 10px;">✨ 現在の企画データを呪文に変換してコピー</button>
+                        <button class="action-btn" onclick="exportGameToSpell()" style="background-color: #d35400; font-size: 13px; padding: 10px;">✨ 現在の企画データをコピー</button>
                         
-                        <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #2c3e50;">📥 呪文から復元する：</div>
-                        <textarea id="gameSpellImportTextArea" rows="3" style="width: 100%; padding: 8px; font-size: 12px; border: 1px solid #b2d8d8; border-radius: 6px;" placeholder="ここに引き継いだ呪文を貼り付けてください..."></textarea>
-                        <button class="action-btn" onclick="importGameFromSpell()" style="background-color: #27ae60; font-size: 13px; padding: 8px;">📥 呪文からデータを復元</button>
+                        <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #2c3e50;">📥 テキストから復元する：</div>
+                        <textarea id="gameSpellImportTextArea" rows="3" style="width: 100%; padding: 8px; font-size: 12px; border: 1px solid #b2d8d8; border-radius: 6px; font-family: monospace;" placeholder="ここに引き継いだテキストデータを貼り付けてください..."></textarea>
+                        <button class="action-btn" onclick="importGameFromSpell()" style="background-color: #27ae60; font-size: 13px; padding: 8px;">📥 テキストからデータを復元</button>
                     </div>
                 </details>
 
@@ -2056,34 +2056,27 @@
             }
         }
 
-        // 🔮 【新規追加】データを引き継ぎ呪文にエクスポートする機能
+        // 🔮 【改善版】純粋なテキスト形式（JSON）でデータを移行用に出力する
         function exportGameToSpell() {
-            let stateToExport = {
-                gameHistory: gameHistory,
-                gameParticipants: gameParticipants,
-                lastOdaiText: lastOdaiText,
-                gameTurn: gameTurn,
-                gameModeOption: document.getElementById("gameModeOption").value,
-                gameTypeOption: document.getElementById("gameTypeOption").value,
-                gameSubOption: document.getElementById("gameSubOption").value,
-                gameCustomRulesInput: document.getElementById("gameCustomRulesInput").value,
-                gameOdaisDisplayHtml: document.getElementById("gameOdaisDisplay").innerHTML
+            let pureState = {
+                players: gameParticipants.map(p => ({ name: p.name, score: p.score, members: p.members || "" })),
+                usedChars: gameHistory.map(h => h.char),
+                historyDetails: gameHistory.map(h => ({ mode: h.mode, char: h.char, wonTeams: h.wonTeams || [] })),
+                turnCount: gameTurn,
+                gameMode: document.getElementById("gameModeOption").value,
+                gameType: document.getElementById("gameTypeOption").value,
+                gameSub: document.getElementById("gameSubOption").value,
+                customRules: document.getElementById("gameCustomRulesInput").value
             };
 
             try {
-                // 安全性と文字化け回避のため、JSON化したテキストをBase64という「英数字のみの長い呪文」に変換します
-                let jsonStr = JSON.stringify(stateToExport);
-                let utf8Bytes = new TextEncoder().encode(jsonStr);
-                let binaryStr = "";
-                for (let i = 0; i < utf8Bytes.length; i++) {
-                    binaryStr += String.fromCharCode(utf8Bytes[i]);
-                }
-                let spellText = btoa(binaryStr);
+                // 改行や空白(インデント)を一切入れずに、ギュッと1行に圧縮したテキストにする
+                let textResult = JSON.stringify(pureState);
 
-                navigator.clipboard.writeText(spellText).then(() => {
-                    alert("【呪文のコピー成功！】\n現在のデータを引き継ぎ用の呪文（英数字の羅列）に変換してクリップボードにコピーしました！そのままLINEのノートやチャットに貼り付けてください。");
+                navigator.clipboard.writeText(textResult).then(() => {
+                    alert("【データのコピー成功！】\nテキストとしてコピーしました！\nこのままLINEでスレッドなどに貼り付けてください！");
                 }).catch(() => {
-                    alert("クリップボードへの自動コピーに失敗しました。スマホの設定を確認してください。");
+                    alert("クリップボードへの自動コピーに失敗しました。");
                 });
             } catch (e) {
                 alert("データの変換中にエラーが発生しました。");
@@ -2091,51 +2084,66 @@
             }
         }
 
-        // 🔮 【新規追加】引き継ぎ呪文からデータを復元するインポート機能
+        // 🔮 【改善版】プレーンテキスト形式（JSON）からデータを復元するインポート機能
         function importGameFromSpell() {
             let textarea = document.getElementById("gameSpellImportTextArea");
-            let spellText = textarea.value.trim();
+            let inputText = textarea.value.trim();
             
-            if (!spellText) {
-                alert("引き継ぎたい呪文をテキストエリアに入力（貼り付け）してください！");
+            if (!inputText) {
+                alert("引き継ぎたいテキストデータをテキストエリアに入力（貼り付け）してください！");
                 return;
             }
 
-            if (!confirm("呪文からデータを復元しますか？\n（現在このスマホに保存されている企画データは上書きされて消去されます）")) return;
+            if (!confirm("入力されたデータから企画を復元しますか？\n（現在このスマホに保存されている企画データは上書きされて消去されます）")) return;
 
             try {
-                // 英数字の羅列（Base64）から元の日本語データ（JSON）に復元します
-                let binaryStr = atob(spellText);
-                let utf8Bytes = new Uint8Array(binaryStr.length);
-                for (let i = 0; i < binaryStr.length; i++) {
-                    utf8Bytes[i] = binaryStr.charCodeAt(i);
+                let decoded = JSON.parse(inputText);
+
+                gameTurn = decoded.turnCount !== undefined ? decoded.turnCount : 0;
+                
+                if (decoded.historyDetails && Array.isArray(decoded.historyDetails)) {
+                    gameHistory = decoded.historyDetails;
+                } else if (decoded.usedChars && Array.isArray(decoded.usedChars)) {
+                    gameHistory = decoded.usedChars.map(c => ({ mode: "引き継ぎデータ", char: c, wonTeams: [] }));
+                } else {
+                    gameHistory = [];
                 }
-                let jsonStr = new TextDecoder().decode(utf8Bytes);
-                let decodedState = JSON.parse(jsonStr);
 
-                // 各変数の復元
-                gameHistory = decodedState.gameHistory || [];
-                gameParticipants = decodedState.gameParticipants || [];
-                lastOdaiText = decodedState.lastOdaiText || "";
-                gameTurn = decodedState.gameTurn || 0;
+                if (decoded.players && Array.isArray(decoded.players)) {
+                    gameParticipants = decoded.players.map(p => ({
+                        name: p.name || "",
+                        score: p.score !== undefined ? p.score : 0,
+                        members: p.members || ""
+                    }));
+                } else {
+                    gameParticipants = [];
+                }
 
-                if(decodedState.gameModeOption) document.getElementById("gameModeOption").value = decodedState.gameModeOption;
-                if(decodedState.gameTypeOption) document.getElementById("gameTypeOption").value = decodedState.gameTypeOption;
-                if(decodedState.gameSubOption) document.getElementById("gameSubOption").value = decodedState.gameSubOption;
-                if(decodedState.gameCustomRulesInput) document.getElementById("gameCustomRulesInput").value = decodedState.gameCustomRulesInput;
-                if(decodedState.gameOdaisDisplayHtml) document.getElementById("gameOdaisDisplay").innerHTML = decodedState.gameOdaisDisplayHtml;
+                if(decoded.gameMode) document.getElementById("gameModeOption").value = decoded.gameMode;
+                if(decoded.gameType) document.getElementById("gameTypeOption").value = decoded.gameType;
+                if(decoded.gameSub) document.getElementById("gameSubOption").value = decoded.gameSub;
+                if(decoded.customRules) document.getElementById("gameCustomRulesInput").value = decoded.customRules;
+                
+                let displayEl = document.getElementById("gameOdaisDisplay");
+                if (gameHistory.length > 0) {
+                    let lastItem = gameHistory[gameHistory.length - 1];
+                    displayEl.innerHTML = `<span style="font-size:14px; color:#bdc3c7;">前回の最後のお題</span><br><b style="font-size:32px; color:#1abc9c;">「${lastItem.char}」</b>`;
+                    lastOdaiText = `${lastItem.mode || "前回のモード"}\n「${lastItem.char}」`;
+                } else {
+                    displayEl.innerHTML = `<span style="color:#bdc3c7;">ボタンを押してお題を引いてね！</span>`;
+                    lastOdaiText = "";
+                }
 
                 document.getElementById("gameTurnSpan").textContent = gameTurn;
                 selectedHistoryIndex = null;
 
-                // 画面をリフレッシュして最新化
                 toggleGameTypeUI();
-                saveGameStateToStorage(); // 復元したデータをローカルストレージにも保存
+                saveGameStateToStorage();
 
-                textarea.value = ""; // 入力欄をクリア
-                alert("🎉 【引き継ぎ完了】\n呪文から企画データを文字化けなしで100%復元しました！そのまま企画を再開できます。");
+                textarea.value = ""; 
+                alert("🎉 【引き継ぎ完了】\nテキスト形式のデータから、プレイヤー、得点、文字履歴をすべて完璧に復元しました！そのまま企画を再開できます。");
             } catch (e) {
-                alert("❌ 【エラー】\n呪文が正しくありません。コピーしたテキストに余計な文字が混ざっていないか、途中で切れていないか確認してください。");
+                alert("❌ 【エラー】\nデータの解析に失敗しました。テキストが途中で切れていないか確認してください。");
                 console.error(e);
             }
         }
