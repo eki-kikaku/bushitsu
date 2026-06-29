@@ -552,7 +552,7 @@
 
             <h2>👥 メンバー・得点管理</h2>
             <div class="game-score-table">
-                <div style="display: flex; justify- nudge-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #eaf2f1; padding-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #eaf2f1; padding-bottom: 8px;">
                     <span style="font-weight: bold; font-size: 14px; color: #34495e;">現在のターン数（自動カウント）</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <button class="score-btn minus" onclick="changeTurn(-1)" style="width:26px; height:26px; font-size:12px;">ー</button>
@@ -593,7 +593,7 @@
                     <summary style="cursor: pointer; font-weight: bold; color: #d35400; font-size: 14px;">📋 主催者データの移行（引き継ぎテキスト）</summary>
                     <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                         <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.4;">
-                            主催者を交代する場合、下のボタンで現在の状況をスッキリしたテキストデータにしてLINEなどで渡すことができます。
+                            主催者を交代する場合、下のボタンで現在の状況をスッキリしたテキストデータにしてLINEなどで渡すことができます。（自動で1行に縮小されます）
                         </p>
                         <button class="action-btn" onclick="exportGameToSpell()" style="background-color: #d35400; font-size: 13px; padding: 10px;">✨ 現在の企画データをコピー</button>
                         
@@ -630,7 +630,7 @@
                 <button onclick="registerCustomStation()" class="action-btn" style="background-color: #f39c12; margin-top: 5px;">この駅をデータベースに登録</button>
             </div>
 
-            <h2>🛠 設定の変更</h2>
+            <h2>🛠 設定 of 変更</h2>
             <div class="search-container">
                 <p style="margin:0; font-weight:bold; color:#16a085; font-size:14px;">ユーザー名の変更</p>
                 <input type="text" id="newUsernameInput" placeholder="新しいユーザー名">
@@ -978,7 +978,7 @@
             currentUser = null;
             viewedUser = null;
             localStorage.removeItem("persistentLoginUser"); 
-            sessionStorage.removeItem("loginUser");
+            sessionStorage.setItem("loginUser", name);
             
             document.getElementById("bottomNavBar").classList.add("hidden");
             document.getElementById("pageSearch").classList.remove("active");
@@ -1059,7 +1059,7 @@
             let lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line !== "");
             let myOwnStations = [...getOwnStationsArray(currentUser)];
             let reportMessages = [];   
-            let multipleReports = [];  
+            let recheckReports = [];  
 
             refreshCombinedStations(); 
 
@@ -1088,10 +1088,20 @@
                             reportMessages.push(`✅ 【登録】${fullName}`);
                         }
                     } else if (matches.length > 1) {
-                        multipleReports.push(inputLine);
-                        reportMessages.push(`❓ 【保留】「${inputLine}」は複数の鉄道会社に存在するため自動登録できませんでした。`);
+                        // 👥 複数の鉄道会社がある場合はすべてマイ駅に登録する
+                        let addedCompanies = [];
+                        matches.forEach(match => {
+                            let fullName = `${match.name}（${match.company}）`;
+                            if (!myOwnStations.includes(fullName)) {
+                                myOwnStations.push(fullName);
+                            }
+                            addedCompanies.push(match.company);
+                        });
+                        reportMessages.push(`👥 【複数会社・全登録】「${inputLine}」のすべての候補（${addedCompanies.join(', ')}）をまとめてマイ駅に登録しました。`);
+                        recheckReports.push(`${inputLine}（複数の鉄道会社が存在するため全登録しました）`);
                     } else {
                         reportMessages.push(`❌ 【未登録】「${inputLine}」という駅はデータベースに存在しません。`);
+                        recheckReports.push(`${inputLine}（データ上にありませんでした）`);
                     }
                 }
             });
@@ -1102,14 +1112,14 @@
             if (logBox) {
                 let logText = `【一括登録結果ログ — 処理件数: ${lines.length}件】\n`;
                 logText += reportMessages.join("\n");
-                if (multipleReports.length > 0) {
-                    logText += "\n\n⚠️ 【要手動登録】複数の候補がありスキップされた駅:\n" + multipleReports.join(", ");
+                if (recheckReports.length > 0) {
+                    logText += "\n\n⚠️ 【再確認してください】:\n" + recheckReports.map(item => `・${item}`).join("\n");
                 }
                 logBox.textContent = logText;
                 logBox.classList.remove("hidden");
             }
             
-            alert(`一括登録が安全に完了しました！（全 ${lines.length} 件）\n詳しい内訳はすぐ下の「一括登録結果ログ」をスクロールして確認してね！`);
+            alert(`一括登録処理が完了しました！（全 ${lines.length} 件）\n内訳や要確認リストはすぐ下の「一括登録結果ログ」を確認してね！`);
             textarea.value = "";
         }
 
@@ -1359,7 +1369,7 @@
                 kanaCounts[firstKana] = (kanaCounts[firstKana] || 0) + 1;
                 kanaEndCounts[lastKana] = (kanaEndCounts[lastKana] || 0) + 1;
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
-                companyCounts[stationObj.company] = (companyCounts[companyCounts] || 0) + 1;
+                companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
                 listData.push({ ...stationObj, fullName: fullName });
             });
@@ -1531,7 +1541,7 @@
             cachedKanjiChars = cachedAllChars.filter(c => /^[\u4E00-\u9FFF]$/.test(c));
         }
 
-        // 👑 对戦形式UIの表示切り替え
+        // 👑 対戦形式UIの表示切り替え
         function toggleGameTypeUI() {
             let type = document.getElementById("gameTypeOption").value;
             let membersGroup = document.getElementById("gameTeamMembersGroup");
@@ -2070,11 +2080,10 @@
             };
 
             try {
-                // 改行や空白(インデント)を一切入れずに、ギュッと1行に圧縮したテキストにする
                 let textResult = JSON.stringify(pureState);
 
                 navigator.clipboard.writeText(textResult).then(() => {
-                    alert("【データのコピー成功！】\nテキストとしてコピーしました！\nこのままLINEでスレッドなどに貼り付けてください！");
+                    alert("【データのコピー成功！】\n改行なしのコンパクトな1行テキストとしてコピーしました！\nこのままLINEに貼り付けても一切邪魔になりません。");
                 }).catch(() => {
                     alert("クリップボードへの自動コピーに失敗しました。");
                 });
