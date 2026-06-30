@@ -938,41 +938,68 @@
         }
 
         function registerCustomStation() {
-            let pref = document.getElementById("customPref").value.trim();
-            let company = document.getElementById("customCompany").value.trim();
-            let line = document.getElementById("customLine").value.trim();
-            let name = document.getElementById("customName").value.trim();
-            let kana = document.getElementById("customKana").value.trim();
-            let sub = document.getElementById("customSub").value.trim();
+    let pref = document.getElementById("customPref").value.trim();
+    let company = document.getElementById("customCompany").value.trim();
+    let line = document.getElementById("customLine").value.trim();
+    let name = document.getElementById("customName").value.trim();
+    let kana = document.getElementById("customKana").value.trim();
+    let sub = document.getElementById("customSub").value.trim();
 
-            if (pref === "" || company === "" || line === "" || name === "" || kana === "") {
-                alert("「副駅名」以外をもれなく入力してね！");
-                return;
-            }
+    if (name === "" || kana === "") {
+        alert("駅名とふりがなは必須項目です！");
+        return;
+    }
 
-            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
+    let customId = "c_" + Date.now();
+    let newStation = {
+        id: customId,
+        name: name,
+        kana: kana,
+        pref: pref,
+        company: company,
+        line: line,
+        sub: sub
+    };
 
-            let exists = myCustoms.some(s => s.name === name && s.company === company) ||
-                         allStations.some(s => s.name === name && s.company === company);
-            if (exists) {
-                alert("その駅はすでに登録されています！");
-                return;
-            }
+    // 1. カスタム駅リストへ追加
+    if (!allUserData[currentUser].customStations) {
+        allUserData[currentUser].customStations = [];
+    }
+    allUserData[currentUser].customStations.push(newStation);
 
-            let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub };
-            myCustoms.push(newStation);
-            
-            database.ref("users/" + currentUser + "/customStations").set(myCustoms)
-            .then(() => {
-                document.getElementById("customPref").value = "";
-                document.getElementById("customCompany").value = "";
-                document.getElementById("customLine").value = "";
-                document.getElementById("customName").value = "";
-                document.getElementById("customKana").value = "";
-                document.getElementById("customSub").value = "";
-                alert("「" + name + "」を新しくデータベースに登録しました！");
-            });
-        }
+    // 2. 【修正】アプリのルールに合わせた「駅名（鉄道会社）」の形式でマイ駅に自動追加
+    let fullName = company ? `${name}（${company}）` : name;
+    
+    if (!allUserData[currentUser].myOwnStations) {
+        allUserData[currentUser].myOwnStations = [];
+    }
+    if (!allUserData[currentUser].myOwnStations.includes(fullName)) {
+        allUserData[currentUser].myOwnStations.push(fullName);
+    }
+
+    // 3. データベースへの保存と画面の反映
+    let updates = {};
+    updates["users/" + currentUser + "/customStations"] = allUserData[currentUser].customStations;
+    updates["users/" + currentUser + "/myOwnStations"] = allUserData[currentUser].myOwnStations;
+
+    database.ref().update(updates)
+        .then(() => {
+            alert(`🎉 新しい駅「${fullName}」をサーバーに登録し、マイ駅にも自動追加しました！`);
+            document.getElementById("customPref").value = "";
+            document.getElementById("customCompany").value = "";
+            document.getElementById("customLine").value = "";
+            document.getElementById("customName").value = "";
+            document.getElementById("customKana").value = "";
+            document.getElementById("customSub").value = "";
+            refreshCombinedStations();
+            updateOwnList();
+        })
+        .catch((err) => {
+            alert("登録に失敗しました");
+            console.error(err);
+        });
+}
+
 
         function logout() {
             currentUser = null;
