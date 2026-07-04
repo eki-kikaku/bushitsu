@@ -236,6 +236,7 @@ const allStations =
   { name: "朝熊", kana: "あさま", pref: "三重県", company: "近畿日本鉄道", line: "鳥羽線", subName: "", note: "" },
   { name: "阿左美", kana: "あざみ", pref: "群馬県", company: "東武鉄道", line: "桐生線", subName: "", note: "" },
   { name: "あざみ野", kana: "あざみの", pref: "神奈川県", company: "東急電鉄", line: "田園都市線", subName: "", note: "" },
+  { name: "あざみ野", kana: "あざみの", pref: "神奈川県", company: "横浜市交通局", line: "ブルーライン", subName: "", note: "" },
   { name: "浅海井", kana: "あざむい", pref: "大分県", company: "九州旅客鉄道", line: "日豊本線", subName: "", note: "" },
   { name: "浅虫温泉", kana: "あさむしおんせん", pref: "青森県", company: "青い森鉄道", line: "青い森鉄道線", subName: "", note: "" },
   { name: "朝里", kana: "あさり", pref: "北海道", company: "北海道旅客鉄道", line: "函館本線", subName: "", note: "" },
