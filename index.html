@@ -172,7 +172,7 @@
             display: flex;
             flex-direction: row;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-end; /* 🛠 ボタンをカードの一番下に揃える */
             gap: 8px;
         }
         .station-info {
@@ -552,7 +552,7 @@
             </div>
 
             <details id="copySectionDetails" style="margin-bottom: 12px; background: #eaf2f1; padding: 10px; border-radius: 8px; border: 1px solid #b2d8d8;">
-                <summary style="cursor: pointer; font-weight: bold; color: #34495e; font-size: 14px;">📋 マイ駅データのバックアップ（表示順通り）</summary>
+                <summary style="cursor: pointer; font-weight: bold; color: #34495e; font-size: 14px;">📋 マイ駅データのコピー・バックアップ（表示順通り）</summary>
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.4;">
                         ※データ数が非常に多い場合、スマホの限界で一括コピーだと途中で切れることがあります。その場合は以下の<b>「分割コピー」</b>を使うか、一番下のテキストボックスから直接コピーしてください。
@@ -735,6 +735,11 @@
                     <input type="text" id="customNote" placeholder="備考（任意）">
                 </div>
                 <button onclick="registerCustomStation()" class="action-btn" style="background-color: #f39c12; margin-top: 5px;">この駅をデータベースに登録</button>
+
+                <details style="margin-top: 10px; border-top: 1px dashed #f0c987; padding-top: 8px;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #e67e22; font-size: 12px;">登録済みの自分のカスタム駅（間違えたらここから削除できます）</summary>
+                    <ul id="myCustomStationsList" style="margin:8px 0 0 0; padding:0; list-style:none;"></ul>
+                </details>
             </div>
 
             <h2>🛠 アカウント</h2>
@@ -838,6 +843,11 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#39;");
+        }
+
+        // 🔑 Firebaseのキーに使えない記号( . # $ [ ] / )を安全な文字列に変換する
+        function sanitizeKey(str) {
+            return encodeURIComponent(str).replace(/\./g, "%2E");
         }
 
         // 👑 UIDからニックネームを引く（未取得時はUIDをそのまま表示）
@@ -963,6 +973,7 @@
             } else if (pageName === 'settings') {
                 document.getElementById("pageSettings").classList.add("active");
                 navItems[3].classList.add("active");
+                renderMyCustomStations();
             }
             window.scrollTo(0, 0);
         }
@@ -1165,8 +1176,16 @@
 
             let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
             myCustoms.push(newStation);
-            
-            database.ref("users/" + currentUser + "/customStations").set(myCustoms)
+
+            // 🆕 登録した駅を自動的に自分のマイ駅にも追加する
+            let fullName = `${name}（${company}）`;
+            let myOwnStations = [...getOwnStationsArray(currentUser)];
+            if (!myOwnStations.includes(fullName)) myOwnStations.push(fullName);
+
+            database.ref("users/" + currentUser).update({
+                customStations: myCustoms,
+                myOwnStations: myOwnStations
+            })
             .then(() => {
                 document.getElementById("customPref").value = "";
                 document.getElementById("customCompany").value = "";
@@ -1175,7 +1194,62 @@
                 document.getElementById("customKana").value = "";
                 document.getElementById("customSub").value = "";
                 document.getElementById("customNote").value = "";
-                alert("「" + name + "」を新しくデータベースに登録しました！");
+                alert("「" + name + "」を新しくデータベースに登録し、マイ駅にも追加しました！");
+                renderMyCustomStations();
+            });
+        }
+
+        // 🆕 自分が登録したカスタム駅の一覧を表示（間違えて登録した場合に削除できるように）
+        function renderMyCustomStations() {
+            let listEl = document.getElementById("myCustomStationsList");
+            if (!listEl) return;
+
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? allUserData[currentUser].customStations : [];
+
+            if (myCustoms.length === 0) {
+                listEl.innerHTML = '<li style="color:#999; font-size:12px; list-style:none;">まだ登録されていません</li>';
+                return;
+            }
+
+            listEl.innerHTML = "";
+            myCustoms.forEach((s, idx) => {
+                let li = document.createElement("li");
+                li.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:white; padding:6px 8px; border-radius:6px; margin-bottom:4px; font-size:12px;";
+
+                let label = document.createElement("span");
+                label.textContent = `${s.name}（${s.company}）`;
+                li.appendChild(label);
+
+                let delBtn = document.createElement("button");
+                delBtn.textContent = "削除";
+                delBtn.className = "delete-btn";
+                delBtn.onclick = () => deleteCustomStation(idx);
+                li.appendChild(delBtn);
+
+                listEl.appendChild(li);
+            });
+        }
+
+        // 🆕 登録済みカスタム駅の削除（誤登録の取り消し用。マイ駅からも同時に削除する）
+        function deleteCustomStation(index) {
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
+            let target = myCustoms[index];
+            if (!target) return;
+
+            if (!confirm(`「${target.name}（${target.company}）」を削除しますか？\n※自分のマイ駅からも同時に削除されます。`)) return;
+
+            myCustoms.splice(index, 1);
+
+            let fullName = `${target.name}（${target.company}）`;
+            let myOwnStations = getOwnStationsArray(currentUser).filter(n => n !== fullName);
+
+            database.ref("users/" + currentUser).update({
+                customStations: myCustoms,
+                myOwnStations: myOwnStations
+            })
+            .then(() => {
+                alert("削除しました。");
+                renderMyCustomStations();
             });
         }
 
@@ -1353,16 +1427,28 @@
                 checkedMembers.push(cb.value);
             });
 
-            let sourceList = combinedStationsList;
+            let sourceList;
 
             if (checkedMembers.length > 0) {
-                sourceList = combinedStationsList.filter(s => {
+                // 🛠 メンバー指定時は、そのメンバーが登録した「データ上にない駅」も検索対象に含める
+                let extraCustoms = [];
+                checkedMembers.forEach(uid => {
+                    if (allUserData[uid] && allUserData[uid].customStations) {
+                        extraCustoms = extraCustoms.concat(allUserData[uid].customStations);
+                    }
+                });
+                let baseWithCustoms = allStations.concat(extraCustoms);
+
+                sourceList = baseWithCustoms.filter(s => {
                     let fullName = `${s.name}（${s.company}）`;
                     return checkedMembers.some(member => {
                         let ownStations = getOwnStationsArray(member);
                         return ownStations.includes(fullName);
                     });
                 });
+            } else {
+                // 🛠 メンバー指定がない通常検索では「データ上にない駅（独自登録駅）」を表示しない
+                sourceList = allStations;
             }
 
             let charCountRaw = document.getElementById("charCountInput").value.trim();
@@ -1614,6 +1700,7 @@
 
             let targetCustoms = (allUserData[targetUser] && allUserData[targetUser].customStations) ? allUserData[targetUser].customStations : [];
             let lookupList = allStations.concat(targetCustoms);
+            let subNameOverrides = (allUserData[targetUser] && allUserData[targetUser].subNameOverrides) ? allUserData[targetUser].subNameOverrides : {};
 
             myOwnNames.forEach(fullName => {
                 let stationObj = lookupList.find(s => `${s.name}（${s.company}）` === fullName);
@@ -1625,6 +1712,10 @@
                     stationObj = { name: name, company: company, kana: "", pref: "不明", line: "", subName: "" };
                 }
 
+                // 🆕 副駅名は時期によって変わるので、個人ごとに上書きできるようにする
+                let overrideKey = sanitizeKey(fullName);
+                let effectiveSubName = (subNameOverrides[overrideKey] !== undefined) ? subNameOverrides[overrideKey] : stationObj.subName;
+
                 let firstKana = stationObj.kana ? stationObj.kana.charAt(0) : "？";
                 let lastKana = stationObj.kana ? stationObj.kana.slice(-1) : "？";
                 
@@ -1633,7 +1724,7 @@
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
-                listData.push({ ...stationObj, fullName: fullName });
+                listData.push({ ...stationObj, subName: effectiveSubName, fullName: fullName });
             });
 
             document.getElementById("ownCount").textContent = listData.length;
@@ -1743,6 +1834,27 @@
                     infoDiv.appendChild(pNote);
                 }
 
+                // 🆕 編集モード時：個人用の副駅名を編集できる欄（期間限定の副駅名など向け）
+                if (isEditMode && targetUser === currentUser) {
+                    let subEditRow = document.createElement("div");
+                    subEditRow.style.cssText = "display:flex; align-items:center; gap:4px; margin-top:4px;";
+
+                    let subEditLabel = document.createElement("span");
+                    subEditLabel.textContent = "副駅名:";
+                    subEditLabel.style.cssText = "font-size:11px; color:#7f8c8d; white-space:nowrap;";
+                    subEditRow.appendChild(subEditLabel);
+
+                    let subEditInput = document.createElement("input");
+                    subEditInput.type = "text";
+                    subEditInput.value = item.subName || "";
+                    subEditInput.placeholder = "自分用の副駅名（未入力なら共通データを表示）";
+                    subEditInput.style.cssText = "flex:1; padding:4px 6px; font-size:12px; border:1px solid #b2d8d8; border-radius:4px; width:auto;";
+                    subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value);
+                    subEditRow.appendChild(subEditInput);
+
+                    infoDiv.appendChild(subEditRow);
+                }
+
                 li.appendChild(infoDiv);
 
                 if (isEditMode && targetUser === currentUser) {
@@ -1757,6 +1869,17 @@
                 }
 
                 ul.appendChild(li);
+            }
+        }
+
+        // 🆕 自分用の副駅名オーバーライドを保存（空欄にすると共通データの副駅名に戻る）
+        function updateSubNameOverride(fullName, newValue) {
+            let key = sanitizeKey(fullName);
+            let path = "users/" + currentUser + "/subNameOverrides/" + key;
+            if (newValue.trim() === "") {
+                database.ref(path).remove();
+            } else {
+                database.ref(path).set(newValue.trim());
             }
         }
 
