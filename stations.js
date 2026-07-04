@@ -1572,7 +1572,7 @@ const allStations =
   { name: "大多羅", kana: "おおだら", pref: "岡山県", company: "西日本旅客鉄道", line: "赤穂線", subName: "", note: "" },
   { name: "大津", kana: "おおつ", pref: "滋賀県", company: "西日本旅客鉄道", line: "東海道本線", subName: "", note: "" },
   { name: "大塚", kana: "おおつか", pref: "東京都", company: "東日本旅客鉄道", line: "山手線", subName: "", note: "" },
-  { name: "大塚", kana: "おおつか", pref: "広島県", company: "広島高速交通", line: "広島新交通1号線", subName: "", note: "" },
+  { name: "大塚", kana: "おおづか", pref: "広島県", company: "広島高速交通", line: "広島新交通1号線", subName: "", note: "" },
   { name: "大塚駅前", kana: "おおつかえきまえ", pref: "東京都", company: "東京都交通局", line: "荒川線", subName: "", note: "" },
   { name: "大塚・帝京大学", kana: "おおつか・ていきょうだいがく", pref: "東京都", company: "多摩都市モノレール", line: "多摩都市モノレール線", subName: "", note: "" },
   { name: "大月", kana: "おおつき", pref: "山梨県", company: "東日本旅客鉄道", line: "中央本線", subName: "", note: "" },
