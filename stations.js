@@ -1623,7 +1623,7 @@ const allStations =
   { name: "大羽根園", kana: "おおばねえん", pref: "三重県", company: "近畿日本鉄道", line: "湯の山線", subName: "", note: "" },
   { name: "大原", kana: "おおはら", pref: "千葉県", company: "いすみ鉄道", line: "いすみ線", subName: "", note: "" },
   { name: "大原", kana: "おおはら", pref: "岡山県", company: "智頭急行", line: "智頭急行線", subName: "", note: "" },
-  { name: "大原", kana: "おおはら", pref: "広島県", company: "広島高速交通", line: "広島新交通1号線", subName: "", note: "" },
+  { name: "大原", kana: "おおばら", pref: "広島県", company: "広島高速交通", line: "広島新交通1号線", subName: "", note: "" },
   { name: "大張野", kana: "おおばりの", pref: "秋田県", company: "東日本旅客鉄道", line: "奥羽本線", subName: "", note: "" },
   { name: "大仁", kana: "おおひと", pref: "静岡県", company: "伊豆箱根鉄道", line: "駿豆線", subName: "", note: "" },
   { name: "大平下", kana: "おおひらした", pref: "栃木県", company: "東日本旅客鉄道", line: "両毛線", subName: "", note: "" },
