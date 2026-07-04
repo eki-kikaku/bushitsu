@@ -1497,7 +1497,7 @@ const allStations =
   { name: "大久保", kana: "おおくぼ", pref: "東京都", company: "東日本旅客鉄道", line: "中央本線", subName: "", note: "" },
   { name: "大久保", kana: "おおくぼ", pref: "京都府", company: "近畿日本鉄道", line: "京都線", subName: "", note: "" },
   { name: "大久保", kana: "おおくぼ", pref: "兵庫県", company: "西日本旅客鉄道", line: "山陽本線", subName: "", note: "" },
-  { name: "逢隈", kana: "おおくま", pref: "宮城県", company: "東日本旅客鉄道", line: "東北本線", subName: "", note: "" },
+  { name: "逢隈", kana: "おおくま", pref: "宮城県", company: "東日本旅客鉄道", line: "常磐線", subName: "", note: "" },
   { name: "大蔵谷", kana: "おおくらだに", pref: "兵庫県", company: "山陽電気鉄道", line: "本線", subName: "", note: "" },
   { name: "大倉山", kana: "おおくらやま", pref: "神奈川県", company: "東急電鉄", line: "東横線", subName: "", note: "" },
   { name: "大倉山", kana: "おおくらやま", pref: "兵庫県", company: "神戸市交通局", line: "山手線", subName: "", note: "" },
