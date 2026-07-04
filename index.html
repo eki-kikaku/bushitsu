@@ -324,6 +324,43 @@
             color: #555;
         }
 
+        .gojuon-table-wrap {
+            overflow-x: auto;
+        }
+        table.gojuon-table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+        table.gojuon-table td {
+            border: 1px solid #eaf2f1;
+            text-align: center;
+            padding: 4px 2px;
+            width: 20%;
+        }
+        td.gojuon-empty {
+            background: #f8fafc;
+        }
+        td.gojuon-cell .gojuon-char {
+            font-size: 13px;
+            color: #b2bec3;
+        }
+        td.gojuon-cell .gojuon-count {
+            font-size: 11px;
+            color: #b2bec3;
+        }
+        td.gojuon-cell.has-count {
+            background: #eef7f5;
+        }
+        td.gojuon-cell.has-count .gojuon-char {
+            color: #006666;
+            font-weight: bold;
+        }
+        td.gojuon-cell.has-count .gojuon-count {
+            color: #00a497;
+            font-weight: bold;
+        }
+
         .custom-station-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -539,6 +576,7 @@
             <ul id="searchResults">
                 <li style="color:#7f8c8d; text-align:center; background:none; box-shadow:none;">検索結果はここに表示されます</li>
             </ul>
+            <div id="searchPagination" style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px;"></div>
         </div>
 
         <div id="pageMyList" class="page-content">
@@ -587,10 +625,10 @@
                 <summary style="cursor: pointer; font-weight: bold; color: #008080; font-size: 14px;">📊 マイ駅の統計データ（内訳をみる）</summary>
                 <div class="stats-section">
                     <div class="stats-title">始まりの文字</div>
-                    <div id="statsKana" class="stats-grid">データがありません</div>
+                    <div id="statsKana" class="gojuon-table-wrap">データがありません</div>
 
                     <div class="stats-title">終わりの文字</div>
-                    <div id="statsKanaEnd" class="stats-grid">データがありません</div>
+                    <div id="statsKanaEnd" class="gojuon-table-wrap">データがありません</div>
 
                     <div class="stats-title">都道府県別</div>
                     <div id="statsPref" class="stats-grid">データがありません</div>
@@ -610,6 +648,7 @@
             </div>
 
             <ul id="myOwnStationsList"></ul>
+            <div id="myOwnPagination" style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px;"></div>
         </div>
 
         <div id="pageGame" class="page-content">
@@ -818,6 +857,74 @@
         let globallySortedOwnNames = []; 
         let authMode = "login"; // 👑 ログインフォームの表示モード（"login" or "signup"）
 
+        // 🆕 ページネーション用（100駅ごとに区切る）
+        const PAGE_SIZE = 100;
+        let lastSearchResults = [];
+        let searchCurrentPage = 1;
+        let myOwnCurrentPage = 1;
+
+        // 🆕 汎用ページネーションUIを描画する（最初と最後のページは常に表示、間は入る分だけ数字、入らなければ「...」）
+        function renderPaginationControls(containerId, totalItems, currentPage, onPageChange) {
+            let container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = "";
+
+            let totalPages = Math.ceil(totalItems / PAGE_SIZE);
+            if (totalPages <= 1) return;
+
+            container.style.flexWrap = "wrap";
+
+            let prevBtn = document.createElement("button");
+            prevBtn.className = "action-btn";
+            prevBtn.style.cssText = "width:auto; padding:6px 10px; font-size:13px;";
+            prevBtn.textContent = "◀";
+            prevBtn.disabled = currentPage <= 1;
+            if (prevBtn.disabled) prevBtn.style.opacity = "0.4";
+            prevBtn.onclick = () => onPageChange(currentPage - 1);
+            container.appendChild(prevBtn);
+
+            // 表示するページ番号一覧を組み立てる（1, 最後, 現在ページの前後1つずつは必ず表示）
+            let pagesToShow = new Set([1, totalPages, currentPage]);
+            if (currentPage - 1 >= 1) pagesToShow.add(currentPage - 1);
+            if (currentPage + 1 <= totalPages) pagesToShow.add(currentPage + 1);
+            let sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
+
+            let prevShown = 0;
+            sortedPages.forEach(pageNum => {
+                if (pageNum - prevShown > 1) {
+                    // 間が空いていたら「...」を表示（クリックはできない）
+                    let dots = document.createElement("span");
+                    dots.textContent = "...";
+                    dots.style.cssText = "font-size:13px; color:#95a5a6; padding:0 2px;";
+                    container.appendChild(dots);
+                }
+
+                let pageBtn = document.createElement("button");
+                pageBtn.className = "action-btn";
+                pageBtn.style.cssText = "width:auto; padding:6px 12px; font-size:13px;";
+                pageBtn.textContent = pageNum;
+                if (pageNum === currentPage) {
+                    pageBtn.style.backgroundColor = "#006666";
+                    pageBtn.disabled = true;
+                } else {
+                    pageBtn.style.backgroundColor = "#7fc4bd";
+                    pageBtn.onclick = () => onPageChange(pageNum);
+                }
+                container.appendChild(pageBtn);
+
+                prevShown = pageNum;
+            });
+
+            let nextBtn = document.createElement("button");
+            nextBtn.className = "action-btn";
+            nextBtn.style.cssText = "width:auto; padding:6px 10px; font-size:13px;";
+            nextBtn.textContent = "▶";
+            nextBtn.disabled = currentPage >= totalPages;
+            if (nextBtn.disabled) nextBtn.style.opacity = "0.4";
+            nextBtn.onclick = () => onPageChange(currentPage + 1);
+            container.appendChild(nextBtn);
+        }
+
         // 👑 企画用グローバル変数
         let gameHistory = []; 
         let gameParticipants = []; 
@@ -832,6 +939,75 @@
         function getPrefIndex(prefName) {
             const index = prefOrder.findIndex(p => p.startsWith(prefName));
             return index === -1 ? 999 : index;
+        }
+
+        // 🆕 五十音表の並び（や行・わ行の空きマスは""）
+        const GOJUON_GRID = [
+            ['あ','い','う','え','お'],
+            ['か','き','く','け','こ'],
+            ['さ','し','す','せ','そ'],
+            ['た','ち','つ','て','と'],
+            ['な','に','ぬ','ね','の'],
+            ['は','ひ','ふ','へ','ほ'],
+            ['ま','み','む','め','も'],
+            ['や','','ゆ','','よ'],
+            ['ら','り','る','れ','ろ'],
+            ['わ','','','','を'],
+        ];
+        const GOJUON_VALID_SET = new Set("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split(""));
+        const GOJUON_DAKUTEN_MAP = {
+            'が':'か','ぎ':'き','ぐ':'く','げ':'け','ご':'こ',
+            'ざ':'さ','じ':'し','ず':'す','ぜ':'せ','ぞ':'そ',
+            'だ':'た','ぢ':'ち','づ':'つ','で':'て','ど':'と',
+            'ば':'は','び':'ひ','ぶ':'ふ','べ':'へ','ぼ':'ほ',
+            'ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ',
+            'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
+            'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ'
+        };
+        // 🆕 濁点・半濁点・小文字を基本の五十音に正規化する（五十音でない文字はnullを返し集計対象外にする）
+        function normalizeToGojuon(char) {
+            if (!char) return null;
+            if (GOJUON_DAKUTEN_MAP[char]) return GOJUON_DAKUTEN_MAP[char];
+            if (GOJUON_VALID_SET.has(char)) return char;
+            return null;
+        }
+
+        // 🆕 始まり/終わりの文字の統計を五十音表の形で描画する
+        function renderGojuonTable(targetId, countsObj) {
+            let container = document.getElementById(targetId);
+            if (!container) return;
+
+            let table = document.createElement("table");
+            table.className = "gojuon-table";
+
+            GOJUON_GRID.forEach(row => {
+                let tr = document.createElement("tr");
+                row.forEach(char => {
+                    let td = document.createElement("td");
+                    if (char === "") {
+                        td.className = "gojuon-empty";
+                    } else {
+                        let count = countsObj[char] || 0;
+                        td.className = count > 0 ? "gojuon-cell has-count" : "gojuon-cell";
+                        td.innerHTML = `<div class="gojuon-char">${escapeHtml(char)}</div><div class="gojuon-count">${count > 0 ? count : "-"}</div>`;
+                    }
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            // 「ん」は表の下に単独で表示
+            let nCount = countsObj["ん"] || 0;
+            let nRow = document.createElement("tr");
+            let nTd = document.createElement("td");
+            nTd.colSpan = 5;
+            nTd.className = nCount > 0 ? "gojuon-cell has-count" : "gojuon-cell";
+            nTd.innerHTML = `<div class="gojuon-char">ん</div><div class="gojuon-count">${nCount > 0 ? nCount : "-"}</div>`;
+            nRow.appendChild(nTd);
+            table.appendChild(nRow);
+
+            container.innerHTML = "";
+            container.appendChild(table);
         }
 
         // 🛡 XSS対策：innerHTMLに差し込む文字列から危険な記号をエスケープする
@@ -1492,16 +1668,28 @@
                 });
             });
 
+            lastSearchResults = results;
+            searchCurrentPage = 1;
+            renderSearchResultsPage();
+        }
+
+        // 🆕 検索結果を現在のページ分だけ描画する（100駅ごと）
+        function renderSearchResultsPage() {
+            let results = lastSearchResults;
             let ul = document.getElementById("searchResults");
             ul.innerHTML = "";
             document.getElementById("searchResultTitleCount").textContent = `(${results.length}件)`;
 
             if (results.length === 0) {
                 ul.innerHTML = '<li style="color:#7f8c8d; text-align:center; background:none; box-shadow:none;">条件に合う駅が見つかりませんでした</li>';
+                document.getElementById("searchPagination").innerHTML = "";
                 return;
             }
 
-            results.slice(0, 200).forEach(item => {
+            let startIdx = (searchCurrentPage - 1) * PAGE_SIZE;
+            let pageItems = results.slice(startIdx, startIdx + PAGE_SIZE);
+
+            pageItems.forEach(item => {
                 let fullName = `${item.name}（${item.company}）`;
                 
                 // 💡 超コンパクトデザインの駅カード生成
@@ -1553,7 +1741,18 @@
                 Object.keys(allUserData).sort((a, b) => nickOf(a).localeCompare(nickOf(b), 'ja')).forEach(uid => {
                     let ownStations = getOwnStationsArray(uid);
                     if (ownStations.includes(fullName)) {
-                        owners.push(uid === currentUser ? `${nickOf(uid)}(自分)` : nickOf(uid));
+                        let label = nickOf(uid);
+
+                        // 🛠 共通データに副駅名がなくても、個人が登録した副駅名があれば表示する
+                        let overrides = (allUserData[uid] && allUserData[uid].subNameOverrides) ? allUserData[uid].subNameOverrides : {};
+                        let personalSub = overrides[sanitizeKey(fullName)];
+                        if (personalSub) {
+                            label += `（${personalSub}）`;
+                        } else if (item.subName) {
+                            label += `（なし）`;
+                        }
+
+                        owners.push(uid === currentUser ? `${label}(自分)` : label);
                     }
                 });
 
@@ -1598,17 +1797,14 @@
                 ul.appendChild(li);
             });
 
-            if (results.length > 200) {
-                let moreLi = document.createElement("li");
-                moreLi.style.color = "#7f8c8d";
-                moreLi.style.textAlign = "center";
-                moreLi.style.fontSize = "12px";
-                moreLi.style.background = "none";
-                moreLi.style.boxShadow = "none";
-                moreLi.style.border = "none";
-                moreLi.textContent = "※件数が多いため上位200件のみ表示しています。";
-                ul.appendChild(moreLi);
-            }
+            renderPaginationControls("searchPagination", results.length, searchCurrentPage, changeSearchPage);
+        }
+
+        // 🆕 検索結果のページ切り替え
+        function changeSearchPage(newPage) {
+            searchCurrentPage = newPage;
+            renderSearchResultsPage();
+            window.scrollTo(0, 0);
         }
 
         function addStation() {
@@ -1685,7 +1881,8 @@
             document.getElementById(targetId).innerHTML = html;
         };
 
-        function updateOwnList() {
+        function updateOwnList(preservePage = false) {
+            if (!preservePage) myOwnCurrentPage = 1;
             if (!currentUser) return;
             
             let targetUser = viewedUser || currentUser;
@@ -1716,11 +1913,12 @@
                 let overrideKey = sanitizeKey(fullName);
                 let effectiveSubName = (subNameOverrides[overrideKey] !== undefined) ? subNameOverrides[overrideKey] : stationObj.subName;
 
-                let firstKana = stationObj.kana ? stationObj.kana.charAt(0) : "？";
-                let lastKana = stationObj.kana ? stationObj.kana.slice(-1) : "？";
+                // 🛠 始まり/終わりの文字は五十音（濁点・半濁点・小文字は基本の行に正規化）だけに反応させる
+                let firstKana = normalizeToGojuon(stationObj.kana ? stationObj.kana.charAt(0) : "");
+                let lastKana = normalizeToGojuon(stationObj.kana ? stationObj.kana.slice(-1) : "");
                 
-                kanaCounts[firstKana] = (kanaCounts[firstKana] || 0) + 1;
-                kanaEndCounts[lastKana] = (kanaEndCounts[lastKana] || 0) + 1;
+                if (firstKana) kanaCounts[firstKana] = (kanaCounts[firstKana] || 0) + 1;
+                if (lastKana) kanaEndCounts[lastKana] = (kanaEndCounts[lastKana] || 0) + 1;
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
@@ -1768,8 +1966,8 @@
                 }
             }
 
-            renderStats("statsKana", kanaCounts, "", "〜", "default");
-            renderStats("statsKanaEnd", kanaEndCounts, "〜", "", "default"); 
+            renderGojuonTable("statsKana", kanaCounts);
+            renderGojuonTable("statsKanaEnd", kanaEndCounts);
             renderStats("statsPref", prefCounts, "", "", "pref");
             renderStats("statsCompany", companyCounts, "", "", "count");
 
@@ -1784,11 +1982,19 @@
 
             if (displayList.length === 0) {
                 ul.innerHTML = '<li style="color:#7f8c8d; text-align:center; background:none; box-shadow:none; border:none;">駅がありません</li>';
+                document.getElementById("myOwnPagination").innerHTML = "";
                 return;
             }
 
-            for (let i = 0; i < displayList.length; i++) {
-                let item = displayList[i];
+            // 🆕 100駅ごとにページ分割して表示
+            let totalPages = Math.ceil(displayList.length / PAGE_SIZE);
+            if (myOwnCurrentPage > totalPages) myOwnCurrentPage = totalPages;
+            if (myOwnCurrentPage < 1) myOwnCurrentPage = 1;
+            let startIdx = (myOwnCurrentPage - 1) * PAGE_SIZE;
+            let pageList = displayList.slice(startIdx, startIdx + PAGE_SIZE);
+
+            for (let i = 0; i < pageList.length; i++) {
+                let item = pageList[i];
                 
                 // 💡 マイ駅一覧も超コンパクトデザイン化
                 let li = document.createElement("li");
@@ -1870,6 +2076,15 @@
 
                 ul.appendChild(li);
             }
+
+            renderPaginationControls("myOwnPagination", displayList.length, myOwnCurrentPage, changeMyOwnPage);
+        }
+
+        // 🆕 マイ駅一覧のページ切り替え
+        function changeMyOwnPage(newPage) {
+            myOwnCurrentPage = newPage;
+            updateOwnList(true);
+            window.scrollTo(0, 0);
         }
 
         // 🆕 自分用の副駅名オーバーライドを保存（空欄にすると共通データの副駅名に戻る）
