@@ -489,6 +489,67 @@
         .manual-del-btn:hover { background-color: #2c3e50 !important; }
 
         .hidden { display: none !important; }
+
+        .gojuon-table-wrap {
+            overflow-x: auto;
+        }
+        table.gojuon-table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+        table.gojuon-table td {
+            border: 1px solid #eaf2f1;
+            text-align: center;
+            padding: 4px 2px;
+            width: 20%;
+            vertical-align: top;
+            height: 76px;        /* 💡 追加：すべてのマスの高さを最大3行分（清・濁・半濁）に統一 */
+            box-sizing: border-box;
+        }
+        td.gojuon-empty {
+            background: #f8fafc;
+        }
+        .gojuon-line {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* 💡 変更：baselineからcenterにして、縦方向の軸を安定化 */
+            gap: 2px;
+            height: 22px;        /* 💡 追加：各行の縦幅を完全に固定し、文字による微妙なズレを防止 */
+            box-sizing: border-box;
+        }
+        .gojuon-line.dakuon,
+        .gojuon-line.handakuon {
+            border-top: 1px dashed #e0ecea;
+        }
+        .gojuon-line .gojuon-char {
+            font-size: 12px;
+            color: #b2bec3;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .gojuon-line .gojuon-count {
+            font-size: 10px;
+            color: #b2bec3;
+            width: 20px;
+            text-align: left;
+            flex-shrink: 0;
+        }
+        .gojuon-line.has-count .gojuon-char {
+            color: #006666;
+            font-weight: bold;
+        }
+        .gojuon-line.has-count .gojuon-count {
+            color: #00a497;
+            font-weight: bold;
+        }
+        .gojuon-line.placeholder {
+            visibility: hidden;
+        }
+        td.gojuon-cell.has-count {
+            background: #f5fbfa;
+        }
     </style>
 </head>
 <body>
