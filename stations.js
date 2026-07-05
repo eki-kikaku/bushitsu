@@ -616,7 +616,7 @@ const allStations =
   { name: "石屋川", kana: "いしやがわ", pref: "兵庫県", company: "阪神電気鉄道", line: "本線", subName: "", note: "" },
   { name: "石山", kana: "いしやま", pref: "滋賀県", company: "西日本旅客鉄道", line: "東海道本線", subName: "", note: "" },
   { name: "石山寺", kana: "いしやまでら", pref: "滋賀県", company: "京阪電気鉄道", line: "石山坂本線", subName: "", note: "" },
-  { name: "石山通", kana: "いしやまどおり", pref: "北海道", company: "札幌市交通事業振興公社", line: "山鼻線", subName: "", note: "" },
+  { name: "石山通", kana: "いしやまどおり", pref: "北海道", company: "札幌市交通事業振興", line: "山鼻線", subName: "", note: "" },
   { name: "伊集院", kana: "いじゅういん", pref: "鹿児島県", company: "九州旅客鉄道", line: "鹿児島本線", subName: "", note: "" },
   { name: "井尻", kana: "いじり", pref: "福岡県", company: "西日本鉄道", line: "天神大牟田線", subName: "", note: "" },
   { name: "石原", kana: "いしわら", pref: "埼玉県", company: "秩父鉄道", line: "秩父本線", subName: "", note: "" },
@@ -1621,6 +1621,7 @@ const allStations =
   { name: "大畠", kana: "おおばたけ", pref: "山口県", company: "西日本旅客鉄道", line: "山陽本線", subName: "", note: "" },
   { name: "大波止", kana: "おおはと", pref: "長崎県", company: "長崎電気軌道", line: "本線", subName: "", note: "" },
   { name: "大羽根園", kana: "おおばねえん", pref: "三重県", company: "近畿日本鉄道", line: "湯の山線", subName: "", note: "" },
+  { name: "大原", kana: "おおはら", pref: "千葉県", company: "東日本旅客鉄道", line: "外房線", subName: "", note: "" },
   { name: "大原", kana: "おおはら", pref: "千葉県", company: "いすみ鉄道", line: "いすみ線", subName: "", note: "" },
   { name: "大原", kana: "おおはら", pref: "岡山県", company: "智頭急行", line: "智頭急行線", subName: "", note: "" },
   { name: "大原", kana: "おおばら", pref: "広島県", company: "広島高速交通", line: "広島新交通1号線", subName: "", note: "" },
@@ -1673,7 +1674,7 @@ const allStations =
   { name: "大森・金城学院前", kana: "おおもり・きんじょうがくいんまえ", pref: "愛知県", company: "名古屋鉄道", line: "瀬戸線", subName: "", note: "" },
   { name: "大森台", kana: "おおもりだい", pref: "千葉県", company: "京成電鉄", line: "千原線", subName: "", note: "" },
   { name: "大森町", kana: "おおもりまち", pref: "東京都", company: "京浜急行電鉄", line: "本線", subName: "", note: "" },
-  { name: "大屋", kana: "おおや", pref: "長野県", company: "しなの鉄道線", line: "しなの鉄道線", subName: "", note: "" },
+  { name: "大屋", kana: "おおや", pref: "長野県", company: "しなの鉄道", line: "しなの鉄道線", subName: "", note: "" },
   { name: "大矢", kana: "おおや", pref: "岐阜県", company: "長良川鉄道", line: "越美南線", subName: "", note: "" },
   { name: "大谷地", kana: "おおやち", pref: "北海道", company: "札幌市交通局", line: "東西線", subName: "", note: "" },
   { name: "大矢知", kana: "おおやち", pref: "三重県", company: "三岐鉄道", line: "三岐線", subName: "", note: "" },
@@ -1924,5 +1925,5 @@ const allStations =
   { name: "御嶽山", kana: "おんたけさん", pref: "東京都", company: "東急電鉄", line: "池上線", subName: "", note: "" },
   { name: "恩智", kana: "おんぢ", pref: "大阪府", company: "近畿日本鉄道", line: "大阪線", subName: "", note: "" },
   { name: "音別", kana: "おんべつ", pref: "北海道", company: "北海道旅客鉄道", line: "根室本線", subName: "", note: "" },
-  { name: "ガーラ湯沢", kana: "がーらゆざわ", pref: "新潟県", company: "東日本旅客鉄道", line: "上越線", subName: "", note: "" }
+  { name: "ガーラ湯沢", kana: "がーらゆざわ", pref: "新潟県", company: "東日本旅客鉄道", line: "上越線", subName: "", note: "実質的に上越新幹線の支線" }
 ]

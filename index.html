@@ -335,30 +335,42 @@
         table.gojuon-table td {
             border: 1px solid #eaf2f1;
             text-align: center;
-            padding: 4px 2px;
+            padding: 2px;
             width: 20%;
+            vertical-align: top;
         }
         td.gojuon-empty {
             background: #f8fafc;
         }
-        td.gojuon-cell .gojuon-char {
-            font-size: 13px;
+        .gojuon-line {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 4px;
+            padding: 2px 0;
+        }
+        .gojuon-line.dakuon,
+        .gojuon-line.handakuon {
+            border-top: 1px dashed #e0ecea;
+        }
+        .gojuon-line .gojuon-char {
+            font-size: 12px;
             color: #b2bec3;
         }
-        td.gojuon-cell .gojuon-count {
-            font-size: 11px;
+        .gojuon-line .gojuon-count {
+            font-size: 10px;
             color: #b2bec3;
         }
-        td.gojuon-cell.has-count {
-            background: #eef7f5;
-        }
-        td.gojuon-cell.has-count .gojuon-char {
+        .gojuon-line.has-count .gojuon-char {
             color: #006666;
             font-weight: bold;
         }
-        td.gojuon-cell.has-count .gojuon-count {
+        .gojuon-line.has-count .gojuon-count {
             color: #00a497;
             font-weight: bold;
+        }
+        td.gojuon-cell.has-count {
+            background: #f5fbfa;
         }
 
         .custom-station-grid {
@@ -955,24 +967,32 @@
             ['わ','','','','を'],
         ];
         const GOJUON_VALID_SET = new Set("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split(""));
-        const GOJUON_DAKUTEN_MAP = {
-            'が':'か','ぎ':'き','ぐ':'く','げ':'け','ご':'こ',
-            'ざ':'さ','じ':'し','ず':'す','ぜ':'せ','ぞ':'そ',
-            'だ':'た','ぢ':'ち','づ':'つ','で':'て','ど':'と',
-            'ば':'は','び':'ひ','ぶ':'ふ','べ':'へ','ぼ':'ほ',
-            'ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ',
+        // 🆕 清音→濁音、清音→半濁音のマップ（は行以外は半濁音なし）
+        const DAKUON_MAP = {
+            'か':'が', 'き':'ぎ', 'く':'ぐ', 'け':'げ', 'こ':'ご',
+            'さ':'ざ', 'し':'じ', 'す':'ず', 'せ':'ぜ', 'そ':'ぞ',
+            'た':'だ', 'ち':'ぢ', 'つ':'づ', 'て':'で', 'と':'ど',
+            'は':'ば', 'ひ':'び', 'ふ':'ぶ', 'へ':'べ', 'ほ':'ぼ'
+        };
+        const HANDAKUON_MAP = {
+            'は':'ぱ', 'ひ':'ぴ', 'ふ':'ぷ', 'へ':'ぺ', 'ほ':'ぽ'
+        };
+        // 🆕 小さい文字（拗音など）だけ基本の五十音にまとめる。濁音・半濁音はそのまま個別にカウントする
+        const SMALL_KANA_MAP = {
             'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
             'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ'
         };
-        // 🆕 濁点・半濁点・小文字を基本の五十音に正規化する（五十音でない文字はnullを返し集計対象外にする）
+        const DAKUTEN_CHAR_SET = new Set([...Object.values(DAKUON_MAP), ...Object.values(HANDAKUON_MAP)]);
+        // 🛠 五十音・濁音・半濁音だけに反応する（それ以外の文字はnullを返し集計対象外にする）
         function normalizeToGojuon(char) {
             if (!char) return null;
-            if (GOJUON_DAKUTEN_MAP[char]) return GOJUON_DAKUTEN_MAP[char];
+            if (SMALL_KANA_MAP[char]) return SMALL_KANA_MAP[char];
             if (GOJUON_VALID_SET.has(char)) return char;
+            if (DAKUTEN_CHAR_SET.has(char)) return char;
             return null;
         }
 
-        // 🆕 始まり/終わりの文字の統計を五十音表の形で描画する
+        // 🆕 始まり/終わりの文字の統計を五十音表の形で描画する（清音・濁音・半濁音を完全に段分けする）
         function renderGojuonTable(targetId, countsObj) {
             let container = document.getElementById(targetId);
             if (!container) return;
@@ -987,9 +1007,24 @@
                     if (char === "") {
                         td.className = "gojuon-empty";
                     } else {
-                        let count = countsObj[char] || 0;
-                        td.className = count > 0 ? "gojuon-cell has-count" : "gojuon-cell";
-                        td.innerHTML = `<div class="gojuon-char">${escapeHtml(char)}</div><div class="gojuon-count">${count > 0 ? count : "-"}</div>`;
+                        let seionCount = countsObj[char] || 0;
+                        let dakuonChar = DAKUON_MAP[char];
+                        let handakuonChar = HANDAKUON_MAP[char];
+                        let dakuonCount = dakuonChar ? (countsObj[dakuonChar] || 0) : 0;
+                        let handakuonCount = handakuonChar ? (countsObj[handakuonChar] || 0) : 0;
+                        let total = seionCount + dakuonCount + handakuonCount;
+
+                        td.className = total > 0 ? "gojuon-cell has-count" : "gojuon-cell";
+
+                        let linesHtml = `<div class="gojuon-line seion${seionCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(char)}</span><span class="gojuon-count">${seionCount > 0 ? seionCount : "-"}</span></div>`;
+                        if (dakuonChar) {
+                            linesHtml += `<div class="gojuon-line dakuon${dakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(dakuonChar)}</span><span class="gojuon-count">${dakuonCount > 0 ? dakuonCount : "-"}</span></div>`;
+                        }
+                        if (handakuonChar) {
+                            linesHtml += `<div class="gojuon-line handakuon${handakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(handakuonChar)}</span><span class="gojuon-count">${handakuonCount > 0 ? handakuonCount : "-"}</span></div>`;
+                        }
+
+                        td.innerHTML = linesHtml;
                     }
                     tr.appendChild(td);
                 });
@@ -1002,7 +1037,7 @@
             let nTd = document.createElement("td");
             nTd.colSpan = 5;
             nTd.className = nCount > 0 ? "gojuon-cell has-count" : "gojuon-cell";
-            nTd.innerHTML = `<div class="gojuon-char">ん</div><div class="gojuon-count">${nCount > 0 ? nCount : "-"}</div>`;
+            nTd.innerHTML = `<div class="gojuon-line seion${nCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">ん</span><span class="gojuon-count">${nCount > 0 ? nCount : "-"}</span></div>`;
             nRow.appendChild(nTd);
             table.appendChild(nRow);
 
@@ -1083,7 +1118,7 @@
                             refreshCombinedStations();
                             updateUserSelect();
                             updateSearchMemberFilters();
-                            updateOwnList();
+                            updateOwnList(true);
                         }
                     });
                 } else {
@@ -1104,8 +1139,16 @@
             loadGameStateFromStorage();
         };
 
+        let scrollPositions = { search: 0, mylist: 0, game: 0, settings: 0 }; // 🆕 ページごとにスクロール位置を別々に記憶
+        let currentActivePage = null;
+
         function switchPage(pageName) {
             if (!currentUser) return;
+
+            // 🆕 離れる前のページのスクロール位置を保存しておく
+            if (currentActivePage) {
+                scrollPositions[currentActivePage] = window.scrollY;
+            }
 
             document.getElementById("pageSearch").classList.remove("active");
             document.getElementById("pageMyList").classList.remove("active");
@@ -1136,11 +1179,9 @@
                         btn.classList.add("hidden");
                     }
                 }
-                document.getElementById("myOwnSearchInput").value = ""; 
-                document.getElementById("myOwnSortSelect").value = "kana";
                 refreshCombinedStations();
                 updateUserSelect();
-                updateOwnList();
+                updateOwnList(true);
             } else if (pageName === 'game') {
                 document.getElementById("pageGame").classList.add("active");
                 navItems[2].classList.add("active");
@@ -1151,7 +1192,10 @@
                 navItems[3].classList.add("active");
                 renderMyCustomStations();
             }
-            window.scrollTo(0, 0);
+
+            currentActivePage = pageName;
+            // 🆕 このページで最後に見ていたスクロール位置を復元する
+            window.scrollTo(0, scrollPositions[pageName] || 0);
         }
 
         function updateUserSelect() {
@@ -1232,7 +1276,7 @@
                 btn.textContent = "⚙️ 編集";
                 btn.classList.remove("editing");
             }
-            updateOwnList();
+            updateOwnList(true);
         }
 
         function togglePasswordVisibility(inputId, buttonEl) {
@@ -1890,6 +1934,8 @@
             
             let kanaCounts = {};
             let kanaEndCounts = {};
+            let kanaVariantsStart = {}; // 🆕 各行で実際に使われた濁音/半濁音のバリエーションを記録
+            let kanaVariantsEnd = {};
             let prefCounts = {};
             let companyCounts = {};
             
@@ -1914,11 +1960,25 @@
                 let effectiveSubName = (subNameOverrides[overrideKey] !== undefined) ? subNameOverrides[overrideKey] : stationObj.subName;
 
                 // 🛠 始まり/終わりの文字は五十音（濁点・半濁点・小文字は基本の行に正規化）だけに反応させる
-                let firstKana = normalizeToGojuon(stationObj.kana ? stationObj.kana.charAt(0) : "");
-                let lastKana = normalizeToGojuon(stationObj.kana ? stationObj.kana.slice(-1) : "");
+                let firstRawChar = stationObj.kana ? stationObj.kana.charAt(0) : "";
+                let lastRawChar = stationObj.kana ? stationObj.kana.slice(-1) : "";
+                let firstKana = normalizeToGojuon(firstRawChar);
+                let lastKana = normalizeToGojuon(lastRawChar);
                 
-                if (firstKana) kanaCounts[firstKana] = (kanaCounts[firstKana] || 0) + 1;
-                if (lastKana) kanaEndCounts[lastKana] = (kanaEndCounts[lastKana] || 0) + 1;
+                if (firstKana) {
+                    kanaCounts[firstKana] = (kanaCounts[firstKana] || 0) + 1;
+                    if (firstRawChar !== firstKana) {
+                        if (!kanaVariantsStart[firstKana]) kanaVariantsStart[firstKana] = new Set();
+                        kanaVariantsStart[firstKana].add(firstRawChar);
+                    }
+                }
+                if (lastKana) {
+                    kanaEndCounts[lastKana] = (kanaEndCounts[lastKana] || 0) + 1;
+                    if (lastRawChar !== lastKana) {
+                        if (!kanaVariantsEnd[lastKana]) kanaVariantsEnd[lastKana] = new Set();
+                        kanaVariantsEnd[lastKana].add(lastRawChar);
+                    }
+                }
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
