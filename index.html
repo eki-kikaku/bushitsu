@@ -375,6 +375,9 @@
             color: #00a497;
             font-weight: bold;
         }
+        .gojuon-line.placeholder {
+            visibility: hidden;
+        }
         td.gojuon-cell.has-count {
             background: #f5fbfa;
         }
@@ -1010,8 +1013,14 @@
                 let tr = document.createElement("tr");
                 row.forEach(char => {
                     let td = document.createElement("td");
+
                     if (char === "") {
+                        // 🛠 空マスも他のマスと同じ3段分の高さを確保する（中身は見えない状態で維持）
                         td.className = "gojuon-empty";
+                        td.innerHTML =
+                            `<div class="gojuon-line seion placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
+                            `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
+                            `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
                     } else {
                         let seionCount = countsObj[char] || 0;
                         let dakuonChar = DAKUON_MAP[char];
@@ -1023,11 +1032,17 @@
                         td.className = total > 0 ? "gojuon-cell has-count" : "gojuon-cell";
 
                         let linesHtml = `<div class="gojuon-line seion${seionCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(char)}</span><span class="gojuon-count">${seionCount > 0 ? seionCount : "-"}</span></div>`;
+
+                        // 🛠 濁音・半濁音がない行も、見えない段を入れて他の行と高さを揃える
                         if (dakuonChar) {
                             linesHtml += `<div class="gojuon-line dakuon${dakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(dakuonChar)}</span><span class="gojuon-count">${dakuonCount > 0 ? dakuonCount : "-"}</span></div>`;
+                        } else {
+                            linesHtml += `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
                         }
                         if (handakuonChar) {
                             linesHtml += `<div class="gojuon-line handakuon${handakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(handakuonChar)}</span><span class="gojuon-count">${handakuonCount > 0 ? handakuonCount : "-"}</span></div>`;
+                        } else {
+                            linesHtml += `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
                         }
 
                         td.innerHTML = linesHtml;
@@ -1037,13 +1052,16 @@
                 table.appendChild(tr);
             });
 
-            // 「ん」は表の下に単独で表示
+            // 「ん」も他の行と同じ3段分の高さに揃える
             let nCount = countsObj["ん"] || 0;
             let nRow = document.createElement("tr");
             let nTd = document.createElement("td");
             nTd.colSpan = 5;
             nTd.className = nCount > 0 ? "gojuon-cell has-count" : "gojuon-cell";
-            nTd.innerHTML = `<div class="gojuon-line seion${nCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">ん</span><span class="gojuon-count">${nCount > 0 ? nCount : "-"}</span></div>`;
+            nTd.innerHTML =
+                `<div class="gojuon-line seion${nCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">ん</span><span class="gojuon-count">${nCount > 0 ? nCount : "-"}</span></div>` +
+                `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
+                `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
             nRow.appendChild(nTd);
             table.appendChild(nRow);
 
