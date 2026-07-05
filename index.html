@@ -489,67 +489,7 @@
         .manual-del-btn:hover { background-color: #2c3e50 !important; }
 
         .hidden { display: none !important; }
-
-        .gojuon-table-wrap {
-            overflow-x: auto;
-        }
-        table.gojuon-table {
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: fixed;
-        }
-        table.gojuon-table td {
-            border: 1px solid #eaf2f1;
-            text-align: center;
-            padding: 4px 2px;
-            width: 20%;
-            vertical-align: top;
-            height: 76px;        /* 💡 追加：すべてのマスの高さを最大3行分（清・濁・半濁）に統一 */
-            box-sizing: border-box;
-        }
-        td.gojuon-empty {
-            background: #f8fafc;
-        }
-        .gojuon-line {
-            display: flex;
-            justify-content: center;
-            align-items: center; /* 💡 変更：baselineからcenterにして、縦方向の軸を安定化 */
-            gap: 2px;
-            height: 22px;        /* 💡 追加：各行の縦幅を完全に固定し、文字による微妙なズレを防止 */
-            box-sizing: border-box;
-        }
-        .gojuon-line.dakuon,
-        .gojuon-line.handakuon {
-            border-top: 1px dashed #e0ecea;
-        }
-        .gojuon-line .gojuon-char {
-            font-size: 12px;
-            color: #b2bec3;
-            width: 16px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .gojuon-line .gojuon-count {
-            font-size: 10px;
-            color: #b2bec3;
-            width: 20px;
-            text-align: left;
-            flex-shrink: 0;
-        }
-        .gojuon-line.has-count .gojuon-char {
-            color: #006666;
-            font-weight: bold;
-        }
-        .gojuon-line.has-count .gojuon-count {
-            color: #00a497;
-            font-weight: bold;
-        }
-        .gojuon-line.placeholder {
-            visibility: hidden;
-        }
-        td.gojuon-cell.has-count {
-            background: #f5fbfa;
-        }
+        
     </style>
 </head>
 <body>
@@ -1023,112 +963,97 @@
             return index === -1 ? 999 : index;
         }
 
-        // 🆕 五十音表の並び（や行・わ行の空きマスは""）
-        const GOJUON_GRID = [
-            ['あ','い','う','え','お'],
-            ['か','き','く','け','こ'],
-            ['さ','し','す','せ','そ'],
-            ['た','ち','つ','て','と'],
-            ['な','に','ぬ','ね','の'],
-            ['は','ひ','ふ','へ','ほ'],
-            ['ま','み','む','め','も'],
-            ['や','','ゆ','','よ'],
-            ['ら','り','る','れ','ろ'],
-            ['わ','','','','を'],
-        ];
-        const GOJUON_VALID_SET = new Set("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split(""));
-        // 🆕 清音→濁音、清音→半濁音のマップ（は行以外は半濁音なし）
-        const DAKUON_MAP = {
-            'か':'が', 'き':'ぎ', 'く':'ぐ', 'け':'げ', 'こ':'ご',
-            'さ':'ざ', 'し':'じ', 'す':'ず', 'せ':'ぜ', 'そ':'ぞ',
-            'た':'だ', 'ち':'ぢ', 'つ':'づ', 'て':'で', 'と':'ど',
-            'は':'ば', 'ひ':'び', 'ふ':'ぶ', 'へ':'べ', 'ほ':'ぼ'
-        };
-        const HANDAKUON_MAP = {
-            'は':'ぱ', 'ひ':'ぴ', 'ふ':'ぷ', 'へ':'ぺ', 'ほ':'ぽ'
-        };
-        // 🆕 小さい文字（拗音など）だけ基本の五十音にまとめる。濁音・半濁音はそのまま個別にカウントする
-        const SMALL_KANA_MAP = {
-            'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
-            'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ'
-        };
-        const DAKUTEN_CHAR_SET = new Set([...Object.values(DAKUON_MAP), ...Object.values(HANDAKUON_MAP)]);
-        // 🛠 五十音・濁音・半濁音だけに反応する（それ以外の文字はnullを返し集計対象外にする）
-        function normalizeToGojuon(char) {
-            if (!char) return null;
-            if (SMALL_KANA_MAP[char]) return SMALL_KANA_MAP[char];
-            if (GOJUON_VALID_SET.has(char)) return char;
-            if (DAKUTEN_CHAR_SET.has(char)) return char;
-            return null;
-        }
+        // 🛠 五十音データ定義
+const GOJUON_GRID = [
+    ['あ','い','う','え','お'],
+    ['か','き','く','け','こ'],
+    ['さ','し','す','せ','そ'],
+    ['た','ち','つ','て','と'],
+    ['な','に','ぬ','ね','の'],
+    ['は','ひ','ふ','へ','ほ'],
+    ['ま','み','む','め','も'],
+    ['や','','ゆ','','よ'],
+    ['ら','り','る','れ','ろ'],
+    ['わ','','','','を'],
+];
+const GOJUON_VALID_SET = new Set("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split(""));
+const DAKUON_MAP = {
+    'か':'が', 'き':'ぎ', 'く':'ぐ', 'け':'げ', 'こ':'ご',
+    'さ':'ざ', 'し':'じ', 'す':'ず', 'せ':'ぜ', 'そ':'ぞ',
+    'た':'だ', 'ち':'ぢ', 'つ':'づ', 'て':'で', 'と':'ど',
+    'は':'ば', 'ひ':'び', 'ふ':'ぶ', 'へ':'べ', 'ほ':'ぼ'
+};
+const HANDAKUON_MAP = {
+    'は':'ぱ', 'ひ':'ぴ', 'ふ':'ぷ', 'へ':'ぺ', 'ほ':'ぽ'
+};
+const SMALL_KANA_MAP = {
+    'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
+    'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ'
+};
+const DAKUTEN_CHAR_SET = new Set([...Object.values(DAKUON_MAP), ...Object.values(HANDAKUON_MAP)]);
 
-        // 🆕 始まり/終わりの文字の統計を五十音表の形で描画する（清音・濁音・半濁音を完全に段分けする）
-        function renderGojuonTable(targetId, countsObj) {
-            let container = document.getElementById(targetId);
-            if (!container) return;
+function normalizeToGojuon(char) {
+    if (!char) return null;
+    if (SMALL_KANA_MAP[char]) return SMALL_KANA_MAP[char];
+    if (GOJUON_VALID_SET.has(char)) return char;
+    if (DAKUTEN_CHAR_SET.has(char)) return char;
+    return null;
+}
 
-            let table = document.createElement("table");
-            table.className = "gojuon-table";
+// ⚙️ 五十音表の描画関数（重複を削除し、左右・上下のズレ防止構造に完全統合）
+function renderGojuonTable(targetId, countsObj) {
+    let container = document.getElementById(targetId);
+    if (!container) return;
 
-            GOJUON_GRID.forEach(row => {
-                let tr = document.createElement("tr");
-                row.forEach(char => {
-                    let td = document.createElement("td");
+    let table = document.createElement("table");
+    table.className = "gojuon-table";
 
-                    if (char === "") {
-                        // 🛠 空マスも他のマスと同じ3段分の高さを確保する（中身は見えない状態で維持）
-                        td.className = "gojuon-empty";
-                        td.innerHTML =
-                            `<div class="gojuon-line seion placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
-                            `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
-                            `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
-                    } else {
-                        let seionCount = countsObj[char] || 0;
-                        let dakuonChar = DAKUON_MAP[char];
-                        let handakuonChar = HANDAKUON_MAP[char];
-                        let dakuonCount = dakuonChar ? (countsObj[dakuonChar] || 0) : 0;
-                        let handakuonCount = handakuonChar ? (countsObj[handakuonChar] || 0) : 0;
-                        let total = seionCount + dakuonCount + handakuonCount;
+    GOJUON_GRID.forEach(row => {
+        let tr = document.createElement("tr");
+        row.forEach(char => {
+            let td = document.createElement("td");
 
-                        td.className = total > 0 ? "gojuon-cell has-count" : "gojuon-cell";
+            if (char === "") {
+                td.className = "gojuon-empty";
+                td.innerHTML = `<div class="gojuon-line seion placeholder"><span class="gojuon-char"> </span><span class="gojuon-count"> </span></div>`;
+            } else {
+                let seionCount = countsObj[char] || 0;
+                let dakuonChar = DAKUON_MAP[char];
+                let handakuonChar = HANDAKUON_MAP[char];
+                let dakuonCount = dakuonChar ? (countsObj[dakuonChar] || 0) : 0;
+                let handakuonCount = handakuonChar ? (countsObj[handakuonChar] || 0) : 0;
+                let total = seionCount + dakuonCount + handakuonCount;
 
-                        let linesHtml = `<div class="gojuon-line seion${seionCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(char)}</span><span class="gojuon-count">${seionCount > 0 ? seionCount : "-"}</span></div>`;
+                td.className = total > 0 ? "gojuon-cell has-count" : "gojuon-cell";
 
-                        // 🛠 濁音・半濁音がない行も、見えない段を入れて他の行と高さを揃える
-                        if (dakuonChar) {
-                            linesHtml += `<div class="gojuon-line dakuon${dakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(dakuonChar)}</span><span class="gojuon-count">${dakuonCount > 0 ? dakuonCount : "-"}</span></div>`;
-                        } else {
-                            linesHtml += `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
-                        }
-                        if (handakuonChar) {
-                            linesHtml += `<div class="gojuon-line handakuon${handakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(handakuonChar)}</span><span class="gojuon-count">${handakuonCount > 0 ? handakuonCount : "-"}</span></div>`;
-                        } else {
-                            linesHtml += `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
-                        }
+                let linesHtml = `<div class="gojuon-line seion${seionCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(char)}</span><span class="gojuon-count">${seionCount > 0 ? seionCount : "-"}</span></div>`;
 
-                        td.innerHTML = linesHtml;
-                    }
-                    tr.appendChild(td);
-                });
-                table.appendChild(tr);
-            });
+                if (dakuonChar) {
+                    linesHtml += `<div class="gojuon-line dakuon${dakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(dakuonChar)}</span><span class="gojuon-count">${dakuonCount > 0 ? dakuonCount : "-"}</span></div>`;
+                }
+                if (handakuonChar) {
+                    linesHtml += `<div class="gojuon-line handakuon${handakuonCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">${escapeHtml(handakuonChar)}</span><span class="gojuon-count">${handakuonCount > 0 ? handakuonCount : "-"}</span></div>`;
+                }
 
-            // 「ん」も他の行と同じ3段分の高さに揃える
-            let nCount = countsObj["ん"] || 0;
-            let nRow = document.createElement("tr");
-            let nTd = document.createElement("td");
-            nTd.colSpan = 5;
-            nTd.className = nCount > 0 ? "gojuon-cell has-count" : "gojuon-cell";
-            nTd.innerHTML =
-                `<div class="gojuon-line seion${nCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">ん</span><span class="gojuon-count">${nCount > 0 ? nCount : "-"}</span></div>` +
-                `<div class="gojuon-line dakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>` +
-                `<div class="gojuon-line handakuon placeholder"><span class="gojuon-char">　</span><span class="gojuon-count">　</span></div>`;
-            nRow.appendChild(nTd);
-            table.appendChild(nRow);
+                td.innerHTML = linesHtml;
+            }
+            tr.appendChild(td);
+        });
+        table.appendChild(tr);
+    });
 
-            container.innerHTML = "";
-            container.appendChild(table);
-        }
+    let nCount = countsObj["ん"] || 0;
+    let nRow = document.createElement("tr");
+    let nTd = document.createElement("td");
+    nTd.colSpan = 5;
+    nTd.className = nCount > 0 ? "gojuon-cell has-count" : "gojuon-cell";
+    nTd.innerHTML = `<div class="gojuon-line seion${nCount > 0 ? ' has-count' : ''}"><span class="gojuon-char">ん</span><span class="gojuon-count">${nCount > 0 ? nCount : "-"}</span></div>`;
+    nRow.appendChild(nTd);
+    table.appendChild(nRow);
+
+    container.innerHTML = "";
+    container.appendChild(table);
+}
 
         // 🛡 XSS対策：innerHTMLに差し込む文字列から危険な記号をエスケープする
         function escapeHtml(str) {
