@@ -210,9 +210,9 @@
             background: var(--nav-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--nav-border);
             border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -248,8 +248,8 @@
         }
 
         .nav-item:hover {
-            color: #f8fafc;
-            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--nav-text-hover);
+            background-color: var(--nav-item-hover-bg);
         }
 
         .nav-item:active {
@@ -887,9 +887,9 @@
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;">
                         改行ごとに駅名を入力してね！<br>
-                        例：新宿（東日本旅客鉄道）
+                        例：梅田（阪急電鉄）/ 大久保（東京都）
                     </p>
-                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;難波&#13;東京"></textarea>
+                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="東京&#13;大阪梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; margin-top: 5px;">まとめてマイ駅に登録</button>
                     
                     <div id="bulkResultLog" class="log-box hidden"></div>
@@ -1781,6 +1781,7 @@
             let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
             myCustoms.push(newStation);
 
+            // 🌟 駅の完全識別のため「駅名（鉄道会社）」で登録
             let fullName = `${name}（${company}）`;
             let myOwnStations = [...getOwnStationsArray(currentUser)];
             if (!myOwnStations.includes(fullName)) myOwnStations.push(fullName);
@@ -1928,16 +1929,7 @@
             saveOwnStationsArray(myOwnStations);
         }
 
-        function copyAllOwnStations() {
-            let targetUser = viewedUser || currentUser;
-            if (globallySortedOwnNames.length === 0) { alert("コピーするマイ駅がありません。"); return; }
-            
-            let text = globallySortedOwnNames.join("\n");
-            navigator.clipboard.writeText(text).then(() => {
-                alert(`【一括コピー完了】全 ${globallySortedOwnNames.length} 駅をクリップボードにコピーしました！`);
-            }).catch(() => { alert("手動コピーエリアからコピーしてください。"); });
-        }
-
+        // 🌟 改善：一括追加（貼り付け）時に都道府県カッコ、会社カッコ、駅名単体をすべて見事に検知する超柔軟パーサー
         function addBulkOwnStations() {
             if (!currentUser) { alert("ログインしてください"); return; }
             
@@ -1952,44 +1944,95 @@
 
             refreshCombinedStations(); 
 
-            let stationLookupMap = {};
-            combinedStationsList.forEach(s => {
-                if (!stationLookupMap[s.name]) stationLookupMap[s.name] = [];
-                stationLookupMap[s.name].push(s);
-            });
-
             lines.forEach(inputLine => {
-                if (inputLine.includes("（") && inputLine.endsWith("）")) {
-                    if (myOwnStations.includes(inputLine)) {
-                        reportMessages.push(`⚠️ 【重複】${inputLine} は既にマイ駅にあります。`);
+                let targetName = inputLine;
+                let hintCompany = null;
+                let hintPref = null;
+
+                // カッコ内のヒント情報を高度パース
+                let braceIdx = inputLine.indexOf("（");
+                if (braceIdx === -1) {
+                    braceIdx = inputLine.indexOf("("); // 半角カッコもサポート
+                }
+                
+                if (braceIdx !== -1 && (inputLine.endsWith("）") || inputLine.endsWith(")"))) {
+                    targetName = inputLine.substring(0, braceIdx).trim();
+                    let inside = inputLine.substring(braceIdx + 1, inputLine.length - 1).trim();
+                    let parts = inside.split(/[・／/,\s]+/); // 各種区切り文字に対応
+                    
+                    parts.forEach(part => {
+                        let trimmed = part.trim();
+                        if (prefOrder.some(p => p.startsWith(trimmed)) || trimmed.endsWith("県") || trimmed.endsWith("府") || trimmed.endsWith("都") || trimmed === "北海道") {
+                            hintPref = trimmed;
+                        } else {
+                            hintCompany = trimmed;
+                        }
+                    });
+                }
+
+                // 完全な駅名一致でデータベースから抽出
+                let candidates = combinedStationsList.filter(s => s.name === targetName);
+
+                if (candidates.length === 0) {
+                    reportMessages.push(`❌ 【未登録】「${inputLine}」という駅はデータベースに存在しません。`);
+                    recheckReports.push(`${inputLine}（データ上にありませんでした）`);
+                } else if (candidates.length === 1) {
+                    // 駅候補がそもそも1つしかない場合
+                    let s = candidates[0];
+                    let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
+                    let legacyFullName = `${s.name}（${s.company}）`; // 旧互換チェック用
+                    
+                    if (myOwnStations.includes(fullNameForSave) || myOwnStations.includes(legacyFullName)) {
+                        reportMessages.push(`⚠️ 【重複】${s.name}（${s.company}・${s.pref}）は既にマイ駅にあります。`);
                     } else {
-                        myOwnStations.push(inputLine);
-                        reportMessages.push(`✅ 【登録】${inputLine}`);
+                        myOwnStations.push(fullNameForSave);
+                        reportMessages.push(`✅ 【登録】${s.name}（${s.company}・${s.pref}）`);
                     }
                 } else {
-                    let matches = stationLookupMap[inputLine] || [];
-                    if (matches.length === 1) {
-                        let fullName = `${matches[0].name}（${matches[0].company}）`;
-                        if (myOwnStations.includes(fullName)) {
-                            reportMessages.push(`⚠️ 【重複】${fullName} は既にマイ駅にあります。`);
+                    // 同名駅が複数ある場合（例：大久保）の絞り込み処理
+                    let matched = candidates;
+
+                    if (hintPref) {
+                        matched = matched.filter(s => s.pref.includes(hintPref));
+                    }
+                    if (hintCompany) {
+                        matched = matched.filter(s => s.company.includes(hintCompany) || (s.line && s.line.includes(hintCompany)));
+                    }
+
+                    if (matched.length === 1) {
+                        // 絞り込みに成功した
+                        let s = matched[0];
+                        let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
+                        let legacyFullName = `${s.name}（${s.company}）`;
+                        
+                        if (myOwnStations.includes(fullNameForSave) || myOwnStations.includes(legacyFullName)) {
+                            reportMessages.push(`⚠️ 【重複】${s.name}（${s.company}・${s.pref}）は既にマイ駅にあります。`);
                         } else {
-                            myOwnStations.push(fullName);
-                            reportMessages.push(`✅ 【登録】${fullName}`);
+                            myOwnStations.push(fullNameForSave);
+                            reportMessages.push(`✅ 【登録】${s.name}（${s.company}・${s.pref}）`);
                         }
-                    } else if (matches.length > 1) {
-                        let addedCompanies = [];
-                        matches.forEach(match => {
-                            let fullName = `${match.name}（${match.company}）`;
-                            if (!myOwnStations.includes(fullName)) {
-                                myOwnStations.push(fullName);
+                    } else if (matched.length > 1) {
+                        // ヒントがないか、ヒントを使っても絞りきれない場合は全ての候補をマイ駅に一括登録
+                        let addedInfos = [];
+                        matched.forEach(s => {
+                            let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
+                            let legacyFullName = `${s.name}（${s.company}）`;
+                            if (!myOwnStations.includes(fullNameForSave) && !myOwnStations.includes(legacyFullName)) {
+                                myOwnStations.push(fullNameForSave);
+                                addedInfos.push(`${s.company}・${s.pref}`);
                             }
-                            addedCompanies.push(match.company);
                         });
-                        reportMessages.push(`👥 【複数会社・全登録】「${inputLine}」のすべての候補（${addedCompanies.join(', ')}）をまとめてマイ駅に登録しました。`);
-                        recheckReports.push(`${inputLine}（複数の鉄道会社が存在するため全登録しました）`);
+                        if (addedInfos.length > 0) {
+                            reportMessages.push(`👥 【同名駅・全登録】「${targetName}」の全候補（${addedInfos.join(', ')}）をマイ駅に登録しました。`);
+                        } else {
+                            reportMessages.push(`⚠️ 【重複】「${targetName}」のすべての候補は既にマイ駅に登録されています。`);
+                        }
                     } else {
-                        reportMessages.push(`❌ 【未登録】「${inputLine}」という駅はデータベースに存在しません。`);
-                        recheckReports.push(`${inputLine}（データ上にありませんでした）`);
+                        // ヒントと一致するものが全滅した場合は、デフォルトで最初の1件を登録
+                        let s = candidates[0];
+                        let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
+                        myOwnStations.push(fullNameForSave);
+                        reportMessages.push(`❓ 【部分照合登録】「${inputLine}」に対応する特定の駅が見つからなかったため、候補から「${s.name}（${s.company}・${s.pref}）」を仮登録しました。`);
                     }
                 }
             });
@@ -2039,10 +2082,11 @@
                 let baseWithCustoms = allStations.concat(extraCustoms);
 
                 sourceList = baseWithCustoms.filter(s => {
-                    let fullName = `${s.name}（${s.company}）`;
+                    let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
+                    let legacyFullName = `${s.name}（${s.company}）`;
                     return checkedMembers.some(member => {
                         let ownStations = getOwnStationsArray(member);
-                        return ownStations.includes(fullName);
+                        return ownStations.includes(fullNameForSave) || ownStations.includes(legacyFullName);
                     });
                 });
             } else {
@@ -2109,7 +2153,8 @@
             let pageItems = results.slice(startIdx, startIdx + PAGE_SIZE);
 
             pageItems.forEach(item => {
-                let fullName = `${item.name}（${item.company}）`;
+                let fullNameForSave = `${item.name}（${item.company}・${item.pref}）`;
+                let legacyFullName = `${item.name}（${item.company}）`; // 旧互換チェック用
                 
                 let li = document.createElement("li");
                 li.className = "station-card";
@@ -2153,11 +2198,11 @@
                 let owners = [];
                 Object.keys(allUserData).sort((a, b) => nickOf(a).localeCompare(nickOf(b), 'ja')).forEach(uid => {
                     let ownStations = getOwnStationsArray(uid);
-                    if (ownStations.includes(fullName)) {
+                    if (ownStations.includes(fullNameForSave) || ownStations.includes(legacyFullName)) {
                         let label = nickOf(uid);
 
                         let overrides = (allUserData[uid] && allUserData[uid].subNameOverrides) ? allUserData[uid].subNameOverrides : {};
-                        let personalSub = overrides[sanitizeKey(fullName)];
+                        let personalSub = overrides[sanitizeKey(fullNameForSave)] || overrides[sanitizeKey(legacyFullName)];
                         if (personalSub) {
                             label += `（${personalSub}）`;
                         } else if (item.subName) {
@@ -2183,8 +2228,9 @@
                 memoBtn.className = "add-memo-btn";
                 memoBtn.textContent = "リスト";
                 memoBtn.onclick = () => {
-                    if (!stationMemo.includes(fullName)) {
-                        stationMemo.push(fullName);
+                    // リスト用にはシンプル駅名で追加
+                    if (!stationMemo.includes(item.name)) {
+                        stationMemo.push(item.name);
                         updateMemoList();
                     }
                 };
@@ -2193,14 +2239,16 @@
                 let ownNames = getOwnStationsArray(currentUser);
                 let ownBtn = document.createElement("button");
                 ownBtn.className = "own-btn";
-                if (ownNames.includes(fullName)) {
+                
+                // 🌟 新旧の格納文字列のいずれかに合致していれば登録済扱いとする
+                if (ownNames.includes(fullNameForSave) || ownNames.includes(legacyFullName)) {
                     ownBtn.textContent = "登録済";
                     ownBtn.style.backgroundColor = "rgba(128, 128, 128, 0.15)";
                     ownBtn.style.color = "var(--text-muted)";
                     ownBtn.disabled = true;
                 } else {
                     ownBtn.textContent = "マイ駅";
-                    ownBtn.onclick = () => addOwnStation(fullName);
+                    ownBtn.onclick = () => addOwnStation(fullNameForSave);
                 }
                 btnGroup.appendChild(ownBtn);
 
@@ -2271,6 +2319,7 @@
 
             let cleanStationNames = stationMemo.map(station => {
                 let idx = station.indexOf("（");
+                if (idx === -1) idx = station.indexOf("(");
                 if (idx !== -1) {
                     return station.substring(0, idx);
                 }
@@ -2308,6 +2357,7 @@
             document.getElementById(targetId).innerHTML = html;
         };
 
+        // 🌟 改善：マイ駅のローカル表示・ソート・統計データ生成を新旧データ対応に完全最適化
         function updateOwnList(preservePage = false) {
             if (!preservePage) myOwnCurrentPage = 1;
             if (!currentUser) return;
@@ -2327,13 +2377,24 @@
             let subNameOverrides = (allUserData[targetUser] && allUserData[targetUser].subNameOverrides) ? allUserData[targetUser].subNameOverrides : {};
 
             myOwnNames.forEach(fullName => {
-                let stationObj = lookupList.find(s => `${s.name}（${s.company}）` === fullName);
+                // 新旧どちらのキー名でもマッチングできるように判定を強化
+                let stationObj = lookupList.find(s => {
+                    let opt1 = `${s.name}（${s.company}・${s.pref}）` === fullName;
+                    let opt2 = `${s.name}（${s.company}）` === fullName;
+                    return opt1 || opt2;
+                });
                 
                 if (!stationObj) {
                     let idx = fullName.indexOf("（");
+                    if (idx === -1) idx = fullName.indexOf("(");
                     let name = idx !== -1 ? fullName.substring(0, idx) : fullName;
-                    let company = idx !== -1 ? fullName.substring(idx + 1, fullName.length - 1) : "";
-                    stationObj = { name: name, company: company, kana: "", pref: "不明", line: "", subName: "" };
+                    
+                    let inside = (idx !== -1 && fullName.endsWith("）")) ? fullName.substring(idx + 1, fullName.length - 1) : "";
+                    let parts = inside.split("・");
+                    let company = parts[0] || "";
+                    let pref = parts[1] || "不明";
+
+                    stationObj = { name: name, company: company, kana: "", pref: pref, line: "", subName: "" };
                 }
 
                 let overrideKey = sanitizeKey(fullName);
@@ -2405,7 +2466,6 @@
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
             let displayList = [...listData]; 
             
-            // 🌟 改善：マイ駅内での検索は、会社名を含まない「駅名（item.name）」単体のみを対象に部分一致検索を行う
             if (keyword !== "") {
                 displayList = displayList.filter(item => item.name.toLowerCase().includes(keyword));
             }
@@ -2639,8 +2699,9 @@
             
             let namePool = [];
             combinedStationsList.forEach(s => {
-                if (s.name) namePool.push({ mainName: s.name, displayName: `${s.name}（${s.company}）` });
-                if (includeSub && s.subName) namePool.push({ mainName: s.subName, displayName: `${s.subName}（${s.company}・副駅名）` });
+                // 🌟 都道府県を識別するために駅名に含める
+                if (s.name) namePool.push({ mainName: s.name, displayName: `${s.name}（${s.company}・${s.pref}）` });
+                if (includeSub && s.subName) namePool.push({ mainName: s.subName, displayName: `${s.subName}（${s.company}・${s.pref}・副駅名）` });
             });
             
             if (namePool.length === 0) { alert("対象データがありません。"); return; }
@@ -2717,7 +2778,7 @@
             startShiritoriSlotAnimation(mode, finalChars, length);
         }
 
-        // 🌟 従来の文字企画用スロットアニメーション
+        // 🌟 改善：スロットアニメーションの駅名表示カラーを完全に引き継ぐことでライトモードでの「白文字隠れバグ」を完全解消
         function startSlotAnimation(type, finalStation, finalIndex, finalChar) {
             let count = 0;
             let displayEl = document.getElementById("gameOdaisDisplay");
@@ -2732,13 +2793,13 @@
                     let randStation = combinedStationsList[Math.floor(Math.random() * combinedStationsList.length)];
                     let randIdx = Math.floor(Math.random() * randStation.name.length) + 1;
                     let randChar = randStation.name.charAt(randIdx - 1) || "？";
-                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">${escapeHtml(randStation.name)}</span><br><b style="font-size:24px; color:var(--primary);">${randIdx}文字目 → 「${escapeHtml(randChar)}」</b>`;
+                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.8; font-weight:500;">${escapeHtml(randStation.name)}</span><br><b style="font-size:24px; color:var(--primary);">${randIdx}文字目 → 「${escapeHtml(randChar)}」</b>`;
                 } else if (type === "jouyo") {
                     let randChar = cachedKanjiChars[Math.floor(Math.random() * cachedKanjiChars.length)] || "駅";
-                    displayEl.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">常用漢字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
+                    displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">常用漢字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
                 } else {
                     let randChar = cachedAllChars[Math.floor(Math.random() * cachedAllChars.length)] || "あ";
-                    displayEl.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">全駅文字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
+                    displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">全駅文字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
                 }
                 
                 if (count >= 30) { 
@@ -2747,15 +2808,15 @@
                     
                     let modeTitle = "";
                     if (type === "rand") {
-                        displayEl.innerHTML = `<span style="font-size:15px; color:#fff; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "駅名乱数モード";
                         lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
                     } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "常用漢字モード";
                         lastOdaiText = `「${finalChar}」`;
                     } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "全駅文字モード";
                         lastOdaiText = `「${finalChar}」`;
                     }
@@ -2791,7 +2852,7 @@
                     }
                     tempChars.push(`「${randChar}」`);
                 }
-                displayEl.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">しりとりスロット</span><br><b style="font-size:22px; color:var(--primary);">${tempChars.join(" → ")}</b>`;
+                displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">しりとりスロット</span><br><b style="font-size:22px; color:var(--primary);">${tempChars.join(" → ")}</b>`;
                 
                 if (count >= 30) {
                     clearInterval(slotInterval);
@@ -2803,7 +2864,7 @@
                     else if (mode === "jouyo") modeTitle = "しりとり (常用漢字)";
                     else modeTitle = "しりとり (全駅文字)";
                     
-                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🏮 ${escapeHtml(modeTitle)}</span><br><b style="font-size:26px; color:var(--primary);">${escapeHtml(displayString)}</b>`;
+                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 ${escapeHtml(modeTitle)}</span><br><b style="font-size:26px; color:var(--primary);">${escapeHtml(displayString)}</b>`;
                     
                     lastOdaiText = finalChars.map(c => `「${c}」`).join(" → ");
                     
@@ -3464,7 +3525,7 @@
                     let isShiri = lastItem.category === "shiritori" || lastItem.chars !== undefined;
                     let displayString = isShiri ? lastItem.chars.map(c => `「${c}」`).join("→") : `「${lastItem.char}」`;
                     
-                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">前回の最後のお題</span><br><b style="font-size:26px; color:var(--primary-dark);">${escapeHtml(displayString)}</b>`;
+                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">前回の最後のお題</span><br><b style="font-size:26px; color:var(--primary-dark);">${escapeHtml(displayString)}</b>`;
                     lastOdaiText = isShiri ? lastItem.chars.map(c => `「${c}」`).join(" → ") : `「${lastItem.char}」`;
                 } else {
                     displayEl.innerHTML = `<span style="color:var(--text-muted);">ボタンを押してお題を引いてね！</span>`;
