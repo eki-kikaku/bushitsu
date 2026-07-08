@@ -925,10 +925,15 @@
 
         <!-- 企画ページ -->
         <div id="pageGame" class="page-content">
-            <h2>🎮 文字企画</h2>
-            
-            <div class="bento-card">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ 企画ルール設定</p>
+            <!-- 文字企画としりとりの切り替えボタン -->
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1;" onclick="switchGameCategory('character')">🔤 文字企画</button>
+                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">🔄 しりとり</button>
+            </div>
+
+            <!-- 文字企画設定 -->
+            <div id="charGameSettings" class="bento-card">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ 文字企画ルール設定</p>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">モード</label>
@@ -956,6 +961,42 @@
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
                     <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
+                </div>
+            </div>
+
+            <!-- しりとり設定 -->
+            <div id="shiritoriGameSettings" class="bento-card hidden">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ しりとりルール設定</p>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">モード</label>
+                        <select id="shiriModeOption" onchange="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                            <option value="rand">駅名乱数</option>
+                            <option value="jouyo">常用漢字</option>
+                            <option value="all">全駅文字</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">対戦形式</label>
+                        <select id="shiriTypeOption" onchange="toggleGameTypeUI(); saveGameStateToStorage();" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                            <option value="individual">個人戦</option>
+                            <option value="team">チーム戦</option>
+                            <option value="coop">協力戦</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">経由字数</label>
+                        <select id="shiriLengthOption" onchange="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;">
+                            <option value="2">2文字</option>
+                            <option value="3">3文字</option>
+                            <option value="4">4文字</option>
+                            <option value="5">5文字</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
+                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：ペアをつくってください"></textarea>
                 </div>
             </div>
 
@@ -999,14 +1040,14 @@
             </div>
 
             <div class="bento-card">
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 13.5px; color: var(--text-muted);">📜 これまでの文字履歴</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 13.5px; color: var(--text-muted);">📜 これまでの文字履歴 <span style="font-size:11px; font-weight:normal; color:var(--primary-dark);">(タップで獲得状況切り替え)</span></p>
                 <div id="gameHistoryDiv" class="game-log-box">まだお題を引いていません</div>
                 
                 <div id="teamTogglePanelContainer" class="hidden" style="margin-top: 10px; background: rgba(0, 164, 151, 0.05); border: 1px solid var(--primary); padding: 12px; border-radius: 12px;"></div>
                 
                 <div class="manual-control-box">
                     <button class="action-btn manual-add-btn" onclick="promptManualAddChar()" style="flex: 1;">➕ 手動追加</button>
-                    <button class="action-btn manual-del-btn" onclick="removeLastHistoryChar()" style="flex: 1;">↩️ 最後の1件削除</button>
+                    <button class="action-btn manual-del-btn" onclick="removeLastHistoryChar()" style="flex: 1;">↩️ 最後の1件を削除</button>
                 </div>
 
                 <details style="margin-bottom: 15px;">
@@ -1132,6 +1173,9 @@
         let lastSearchResults = [];
         let searchCurrentPage = 1;
         let myOwnCurrentPage = 1;
+
+        // 🌟 企画用グローバル変数
+        let gameCategory = "character"; // 'character' or 'shiritori'
 
         // 🌟 テーマ（ライトモード/ダークモード）切り替えロジック
         function initTheme() {
@@ -1468,7 +1512,7 @@
                     } else {
                         btn.textContent = "⚙️ 編集"; 
                         btn.classList.remove("editing"); 
-                        btn.style.background = "linear-gradient(135deg, var(--primary), var(--accent))";
+                        btn.style.background = "linear-gradient(135deg, var(--primary-dark), var(--accent))";
                     }
                     if (viewedUser === currentUser) {
                         btn.classList.remove("hidden");
@@ -1494,6 +1538,39 @@
 
             currentActivePage = pageName;
             window.scrollTo(0, scrollPositions[pageName] || 0);
+        }
+
+        // 🌟 企画種類（文字企画／しりとり）の切り替え
+        function switchGameCategory(cat) {
+            gameCategory = cat;
+            const charBtn = document.getElementById("gameCatCharBtn");
+            const shiriBtn = document.getElementById("gameCatShiriBtn");
+            const charSettings = document.getElementById("charGameSettings");
+            const shiriSettings = document.getElementById("shiritoriGameSettings");
+
+            if (cat === "character") {
+                charBtn.style.background = "linear-gradient(135deg, var(--primary), var(--accent))";
+                charBtn.style.color = "#ffffff";
+                shiriBtn.style.background = "var(--glass-bg)";
+                shiriBtn.style.color = "var(--text-main)";
+                shiriBtn.style.border = "1px solid var(--glass-border)";
+                
+                charSettings.classList.remove("hidden");
+                shiriSettings.classList.add("hidden");
+            } else {
+                shiriBtn.style.background = "linear-gradient(135deg, var(--primary), var(--accent))";
+                shiriBtn.style.color = "#ffffff";
+                charBtn.style.background = "var(--glass-bg)";
+                charBtn.style.color = "var(--text-main)";
+                charBtn.style.border = "1px solid var(--glass-border)";
+                
+                shiriSettings.classList.remove("hidden");
+                charSettings.classList.add("hidden");
+            }
+            
+            toggleGameTypeUI();
+            updateGameHistoryDisplay();
+            saveGameStateToStorage();
         }
 
         function updateUserSelect() {
@@ -2319,8 +2396,10 @@
 
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
             let displayList = [...listData]; 
+            
+            // 🌟 改善：マイ駅内での検索は、会社名を含まない「駅名（item.name）」単体のみを対象に部分一致検索を行う
             if (keyword !== "") {
-                displayList = displayList.filter(item => item.fullName.toLowerCase().includes(keyword));
+                displayList = displayList.filter(item => item.name.toLowerCase().includes(keyword));
             }
 
             let ul = document.getElementById("myOwnStationsList");
@@ -2506,13 +2585,22 @@
         }
 
         function toggleGameTypeUI() {
-            let type = document.getElementById("gameTypeOption").value;
+            let type = "individual";
+            if (gameCategory === "character") {
+                type = document.getElementById("gameTypeOption").value;
+            } else {
+                type = document.getElementById("shiriTypeOption").value;
+            }
+            
             let membersGroup = document.getElementById("gameTeamMembersGroup");
             let nameLabel = document.getElementById("gamePlayerNameLabel");
             
             if (type === "team") {
                 membersGroup.classList.remove("hidden");
                 nameLabel.textContent = "チーム名";
+            } else if (type === "coop") {
+                membersGroup.classList.add("hidden");
+                nameLabel.textContent = "メンバー名";
             } else {
                 membersGroup.classList.add("hidden");
                 nameLabel.textContent = "プレイヤー名";
@@ -2522,13 +2610,17 @@
         }
 
         function drawGameOdai() {
-            let mode = document.getElementById("gameModeOption").value;
-            if (mode === "rand") {
-                drawStationRand();
-            } else if (mode === "jouyo") {
-                drawJouyoKanji();
-            } else if (mode === "all") {
-                drawAllChar();
+            if (gameCategory === "character") {
+                let mode = document.getElementById("gameModeOption").value;
+                if (mode === "rand") {
+                    drawStationRand();
+                } else if (mode === "jouyo") {
+                    drawJouyoKanji();
+                } else if (mode === "all") {
+                    drawAllChar();
+                }
+            } else {
+                drawShiritoriOdai();
             }
         }
 
@@ -2571,6 +2663,53 @@
             startSlotAnimation("all", "", 0, finalChar);
         }
 
+        // 🌟 しりとりお題の一括抽選
+        function drawShiritoriOdai() {
+            if (slotInterval) return;
+            refreshCombinedStations();
+            initGamePools();
+            
+            let mode = document.getElementById("shiriModeOption").value;
+            let length = parseInt(document.getElementById("shiriLengthOption").value, 10) || 2;
+            let includeSub = document.getElementById("gameSubOption").value === "yes";
+
+            let charsPool = [];
+            if (mode === "rand") {
+                let namePool = [];
+                combinedStationsList.forEach(s => {
+                    if (s.name) namePool.push(s.name);
+                    if (includeSub && s.subName) namePool.push(s.subName);
+                });
+                if (namePool.length === 0) { alert("対象データがありません。"); return; }
+                let charSet = new Set();
+                namePool.forEach(name => {
+                    for (let c of name) {
+                        if (c.trim() !== "") charSet.add(c);
+                    }
+                });
+                charsPool = Array.from(charSet);
+            } else if (mode === "jouyo") {
+                charsPool = cachedKanjiChars;
+            } else {
+                charsPool = cachedAllChars;
+            }
+
+            if (charsPool.length < length) {
+                alert("文字数が足りません。");
+                return;
+            }
+
+            let finalChars = [];
+            let poolCopy = [...charsPool];
+            for (let i = 0; i < length; i++) {
+                let idx = Math.floor(Math.random() * poolCopy.length);
+                finalChars.push(poolCopy.splice(idx, 1)[0]);
+            }
+
+            startShiritoriSlotAnimation(mode, finalChars, length);
+        }
+
+        // 🌟 従来の文字企画用スロットアニメーション
         function startSlotAnimation(type, finalStation, finalIndex, finalChar) {
             let count = 0;
             let displayEl = document.getElementById("gameOdaisDisplay");
@@ -2600,20 +2739,20 @@
                     
                     let modeTitle = "";
                     if (type === "rand") {
-                        displayEl.innerHTML = `<span style="font-size:15px; color:var(--text-main); font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:15px; color:#fff; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "駅名乱数モード";
                         lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
                     } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "常用漢字モード";
-                        lastOdaiText = `常用漢字モード\n「${finalChar}」`;
+                        lastOdaiText = `「${finalChar}」`;
                     } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "全駅文字モード";
-                        lastOdaiText = `全駅文字モード\n「${finalChar}」`;
+                        lastOdaiText = `「${finalChar}」`;
                     }
                     
-                    gameHistory.push({ mode: modeTitle, char: finalChar, wonTeams: [] });
+                    gameHistory.push({ category: "character", mode: modeTitle, char: finalChar, wonTeams: [] });
                     gameTurn++;
                     document.getElementById("gameTurnSpan").textContent = gameTurn;
                     
@@ -2623,25 +2762,87 @@
             }, 100); 
         }
 
+        // 🌟 しりとり用スロットアニメーション
+        function startShiritoriSlotAnimation(mode, finalChars, length) {
+            let count = 0;
+            let displayEl = document.getElementById("gameOdaisDisplay");
+            if (slotInterval) clearInterval(slotInterval);
+            
+            selectedHistoryIndex = null;
+            renderTeamTogglePanel();
+
+            slotInterval = setInterval(() => {
+                count++;
+                let tempChars = [];
+                for (let i = 0; i < length; i++) {
+                    let randChar = "";
+                    if (mode === "jouyo") {
+                        randChar = cachedKanjiChars[Math.floor(Math.random() * cachedKanjiChars.length)] || "駅";
+                    } else {
+                        randChar = cachedAllChars[Math.floor(Math.random() * cachedAllChars.length)] || "あ";
+                    }
+                    tempChars.push(`「${randChar}」`);
+                }
+                displayEl.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">しりとりスロット</span><br><b style="font-size:22px; color:var(--primary);">${tempChars.join(" → ")}</b>`;
+                
+                if (count >= 30) {
+                    clearInterval(slotInterval);
+                    slotInterval = null;
+                    
+                    let displayString = finalChars.map(c => `「${c}」`).join(" → ");
+                    let modeTitle = "";
+                    if (mode === "rand") modeTitle = "しりとり (駅名乱数)";
+                    else if (mode === "jouyo") modeTitle = "しりとり (常用漢字)";
+                    else modeTitle = "しりとり (全駅文字)";
+                    
+                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">🏮 ${escapeHtml(modeTitle)}</span><br><b style="font-size:26px; color:var(--primary);">${escapeHtml(displayString)}</b>`;
+                    
+                    lastOdaiText = finalChars.map(c => `「${c}」`).join(" → ");
+                    
+                    gameHistory.push({
+                        category: "shiritori",
+                        mode: modeTitle,
+                        chars: finalChars,
+                        wonTeams: []
+                    });
+                    gameTurn++;
+                    document.getElementById("gameTurnSpan").textContent = gameTurn;
+                    
+                    updateGameHistoryDisplay();
+                    saveGameStateToStorage();
+                }
+            }, 100);
+        }
+
         function updateGameHistoryDisplay() {
             let el = document.getElementById("gameHistoryDiv");
             if (!el) return;
             if (gameHistory.length === 0) { el.textContent = "まだお題を引いていません"; return; }
             
-            let isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            let isTeamMode = false;
+            let isCoopMode = false;
+            if (gameCategory === "character") {
+                isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            } else {
+                let type = document.getElementById("shiriTypeOption").value;
+                isTeamMode = type === "team";
+                isCoopMode = type === "coop";
+            }
+            
             let html = "";
             
             for (let i = 0; i < gameHistory.length; i++) {
                 let h = gameHistory[i];
-                let hasWon = isTeamMode && h.wonTeams && h.wonTeams.length > 0;
+                let isShiritori = h.category === "shiritori" || h.chars !== undefined;
+                
+                let labelText = isShiritori ? h.chars.map(c => `「${c}」`).join("→") : `「${h.char}」`;
+                
+                let hasWon = (isTeamMode || isCoopMode) && h.wonTeams && h.wonTeams.length > 0;
                 let bgStyle = hasWon ? "background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);" : "background-color: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main);";
                 
-                html += `<span class="hist-char" style="cursor:pointer; font-weight:bold; ${bgStyle}" onclick="clickHistoryChar(${i})">「${escapeHtml(h.char)}」</span>`;
+                html += `<span class="hist-char" style="cursor:pointer; font-weight:bold; font-size: 13.5px; margin: 4px; padding: 4px 10px; border-radius: 8px; ${bgStyle}" onclick="clickHistoryChar(${i})">${escapeHtml(labelText)}</span>`;
                 
-                if ((i + 1) % 5 === 0) {
-                    if ((i + 1) % 10 === 0) {
-                        html += ` <b style="color:#e67e22; font-size:13px; margin-left:6px;">${i + 1}</b>`;
-                    }
+                if ((i + 1) % 4 === 0) {
                     html += "<br>";
                 }
             }
@@ -2650,52 +2851,78 @@
         }
 
         function clickHistoryChar(idx) {
-            let isTeamMode = document.getElementById("gameTypeOption").value === "team";
-            if (!isTeamMode) return; 
+            let isTeamMode = false;
+            let isCoopMode = false;
+            if (gameCategory === "character") {
+                isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            } else {
+                let type = document.getElementById("shiriTypeOption").value;
+                isTeamMode = type === "team";
+                isCoopMode = type === "coop";
+            }
+            if (!isTeamMode && !isCoopMode) return; 
             
             selectedHistoryIndex = idx;
             renderTeamTogglePanel();
         }
 
+        // 🌟 チーム戦・協力戦時に誰が（またはみんなが）出せたかチェックするパネル
         function renderTeamTogglePanel() {
             let container = document.getElementById("teamTogglePanelContainer");
             if (!container) return;
             
-            let isTeamMode = document.getElementById("gameTypeOption").value === "team";
-            if (!isTeamMode || selectedHistoryIndex === null || !gameHistory[selectedHistoryIndex]) {
+            let isTeamMode = false;
+            let isCoopMode = false;
+            if (gameCategory === "character") {
+                isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            } else {
+                let type = document.getElementById("shiriTypeOption").value;
+                isTeamMode = type === "team";
+                isCoopMode = type === "coop";
+            }
+
+            if ((!isTeamMode && !isCoopMode) || selectedHistoryIndex === null || !gameHistory[selectedHistoryIndex]) {
                 container.classList.add("hidden");
                 return;
             }
             
             container.classList.remove("hidden");
             let h = gameHistory[selectedHistoryIndex];
+            let isShiritori = h.category === "shiritori" || h.chars !== undefined;
+            let displayLabel = isShiritori ? h.chars.map(c => `「${c}」`).join("→") : `「${h.char}」`;
             
             let pTitle = document.createElement("p");
             pTitle.style.margin = "0 0 8px 0";
             pTitle.style.fontSize = "13px";
             pTitle.style.fontWeight = "bold";
             pTitle.style.color = "var(--primary-dark)";
-            pTitle.textContent = `🎯 文字 「${h.char}」 を出せたチーム：`;
+            
+            if (isCoopMode) {
+                pTitle.textContent = `🎯 ${displayLabel} (${selectedHistoryIndex + 1}番目) を全員で出せたか：`;
+            } else {
+                pTitle.textContent = `🎯 ${displayLabel} (${selectedHistoryIndex + 1}番目) を出せたチームにチェック：`;
+            }
             
             let btnWrapper = document.createElement("div");
             btnWrapper.style.display = "flex";
             btnWrapper.style.flexWrap = "wrap";
             btnWrapper.style.gap = "8px";
             
-            gameParticipants.forEach(p => {
+            if (isCoopMode) {
+                // 協力戦：全員でクリアできたかのマーク
                 let btn = document.createElement("button");
                 btn.className = "action-btn";
                 btn.style.width = "auto";
                 btn.style.padding = "6px 12px";
                 btn.style.fontSize = "13px";
                 
-                let isWon = h.wonTeams && h.wonTeams.includes(p.name);
+                let isWon = h.wonTeams && h.wonTeams.includes("全員");
                 if (isWon) {
-                    btn.textContent = `✅ ${p.name}`;
+                    btn.textContent = `✅ 全員クリア！`;
                     btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
                     btn.style.color = "#fff";
                 } else {
-                    btn.textContent = `⬜ ${p.name}`;
+                    btn.textContent = `⬜ 未クリア`;
                     btn.style.background = "rgba(128,128,128,0.15)";
                     btn.style.color = "var(--text-muted)";
                 }
@@ -2703,9 +2930,9 @@
                 btn.onclick = () => {
                     if (!h.wonTeams) h.wonTeams = [];
                     if (isWon) {
-                        h.wonTeams = h.wonTeams.filter(t => t !== p.name);
+                        h.wonTeams = [];
                     } else {
-                        h.wonTeams.push(p.name);
+                        h.wonTeams = ["全員"];
                     }
                     recalculateTeamScores();
                     renderTeamTogglePanel();
@@ -2713,7 +2940,41 @@
                     saveGameStateToStorage(); 
                 };
                 btnWrapper.appendChild(btn);
-            });
+            } else {
+                // 通常のチーム戦用
+                gameParticipants.forEach(p => {
+                    let btn = document.createElement("button");
+                    btn.className = "action-btn";
+                    btn.style.width = "auto";
+                    btn.style.padding = "6px 12px";
+                    btn.style.fontSize = "13px";
+                    
+                    let isWon = h.wonTeams && h.wonTeams.includes(p.name);
+                    if (isWon) {
+                        btn.textContent = `✅ ${p.name}`;
+                        btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+                        btn.style.color = "#fff";
+                    } else {
+                        btn.textContent = `⬜ ${p.name}`;
+                        btn.style.background = "rgba(128,128,128,0.15)";
+                        btn.style.color = "var(--text-muted)";
+                    }
+                    
+                    btn.onclick = () => {
+                        if (!h.wonTeams) h.wonTeams = [];
+                        if (isWon) {
+                            h.wonTeams = h.wonTeams.filter(t => t !== p.name);
+                        } else {
+                            h.wonTeams.push(p.name);
+                        }
+                        recalculateTeamScores();
+                        renderTeamTogglePanel();
+                        updateGameHistoryDisplay();
+                        saveGameStateToStorage(); 
+                    };
+                    btnWrapper.appendChild(btn);
+                });
+            }
             
             let closeBtn = document.createElement("button");
             closeBtn.className = "action-btn";
@@ -2721,7 +2982,7 @@
             closeBtn.style.padding = "6px 12px";
             closeBtn.style.fontSize = "13px";
             closeBtn.style.background = "var(--glass-border)";
-            closeBtn.style.color = "var(--text-main)";
+            closeBtn.style.color = "#fff";
             closeBtn.textContent = "閉じる";
             closeBtn.onclick = () => {
                 selectedHistoryIndex = null;
@@ -2736,12 +2997,24 @@
 
         function recalculateTeamScores() {
             gameParticipants.forEach(p => { p.score = 0; });
+            
+            let isCoopMode = false;
+            if (gameCategory === "shiritori") {
+                isCoopMode = document.getElementById("shiriTypeOption").value === "coop";
+            }
+
             gameHistory.forEach(h => {
                 if (h.wonTeams) {
-                    h.wonTeams.forEach(tName => {
-                        let team = gameParticipants.find(p => p.name === tName);
-                        if (team) team.score++;
-                    });
+                    if (isCoopMode) {
+                        if (h.wonTeams.includes("全員")) {
+                            gameParticipants.forEach(p => p.score++);
+                        }
+                    } else {
+                        h.wonTeams.forEach(tName => {
+                            let team = gameParticipants.find(p => p.name === tName);
+                            if (team) team.score++;
+                        });
+                    }
                 }
             });
             renderParticipants();
@@ -2753,7 +3026,13 @@
             
             let name = inputName.value.trim();
             let members = inputMembers.value.trim();
-            let isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            
+            let isTeamMode = false;
+            if (gameCategory === "character") {
+                isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            } else {
+                isTeamMode = document.getElementById("shiriTypeOption").value === "team";
+            }
             
             if (name === "") return;
             
@@ -2767,16 +3046,20 @@
             inputMembers.value = "";
             renderParticipants();
             
-            if (isTeamMode) {
-                recalculateTeamScores();
-            }
+            recalculateTeamScores();
             saveGameStateToStorage(); 
         }
 
         function renderParticipants() {
             let ul = document.getElementById("gamePlayerList");
             ul.innerHTML = "";
-            let isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            
+            let isTeamMode = false;
+            if (gameCategory === "character") {
+                isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            } else {
+                isTeamMode = document.getElementById("shiriTypeOption").value === "team";
+            }
             
             gameParticipants.forEach((p, idx) => {
                 let li = document.createElement("li");
@@ -2842,7 +3125,7 @@
                 delBtn.textContent = "削除";
                 delBtn.onclick = () => { 
                     gameParticipants.splice(idx, 1); 
-                    if (isTeamMode) recalculateTeamScores();
+                    recalculateTeamScores();
                     renderParticipants(); 
                     saveGameStateToStorage();
                 };
@@ -2872,29 +3155,56 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
+        // 🌟 履歴一覧用テキストの生成（しりとり時は1行ごとに改行）
         function generateHistoryTextForLine() {
             let text = "";
             for (let i = 0; i < gameHistory.length; i++) {
-                text += `「${gameHistory[i].char}」`;
-                if ((i + 1) % 5 === 0) {
-                    if ((i + 1) % 10 === 0) {
-                        text += ` ${i + 1}`;
+                let h = gameHistory[i];
+                let isShiritori = h.category === "shiritori" || h.chars !== undefined;
+                
+                if (isShiritori) {
+                    text += h.chars.map(c => `「${c}」`).join("→") + "\n";
+                } else {
+                    text += `「${h.char}」`;
+                    if ((i + 1) % 5 === 0) {
+                        if ((i + 1) % 10 === 0) {
+                            text += ` ${i + 1}`;
+                        }
+                        text += "\n";
                     }
-                    text += "\n";
                 }
             }
-            if (gameHistory.length % 5 !== 0) text += "\n";
             return text.trim();
         }
 
         function copyGameResult() {
-            let modeSelector = document.getElementById("gameModeOption");
-            let modeText = modeSelector.options[modeSelector.selectedIndex].text;
-            let modeType = document.getElementById("gameTypeOption").value === "team" ? "チーム戦" : "個人戦";
-            let subType = document.getElementById("gameSubOption").value === "yes" ? "副駅名あり" : "副駅名なし";
-            let customRules = document.getElementById("gameCustomRulesInput").value.trim();
+            let customRules = "";
+            let modeText = "";
+            let modeType = "";
+            let subType = "";
             
-            let isTeamMode = (document.getElementById("gameTypeOption").value === "team");
+            let isTeamMode = false;
+            let isCoopMode = false;
+
+            if (gameCategory === "shiritori") {
+                let modeSelector = document.getElementById("shiriModeOption");
+                modeText = "しりとり (" + modeSelector.options[modeSelector.selectedIndex].text + ")";
+                let typeVal = document.getElementById("shiriTypeOption").value;
+                modeType = typeVal === "team" ? "チーム戦" : (typeVal === "coop" ? "協力戦" : "個人戦");
+                let lenOption = document.getElementById("shiriLengthOption");
+                subType = "経由字数: " + lenOption.options[lenOption.selectedIndex].text;
+                customRules = document.getElementById("shiriCustomRulesInput").value.trim();
+                isTeamMode = typeVal === "team";
+                isCoopMode = typeVal === "coop";
+            } else {
+                let modeSelector = document.getElementById("gameModeOption");
+                modeText = modeSelector.options[modeSelector.selectedIndex].text;
+                let typeVal = document.getElementById("gameTypeOption").value;
+                modeType = typeVal === "team" ? "チーム戦" : "個人戦";
+                subType = document.getElementById("gameSubOption").value === "yes" ? "副駅名あり" : "副駅名なし";
+                customRules = document.getElementById("gameCustomRulesInput").value.trim();
+                isTeamMode = typeVal === "team";
+            }
             
             let scoreText = gameParticipants.map(p => {
                 let base = `${p.name} ${p.score}点`;
@@ -2904,7 +3214,7 @@
                 return base;
             }).join("\n") || "データなし";
             
-            let text = `【文字企画 リザルト】\n`;
+            let text = gameCategory === "shiritori" ? `【しりとり企画 リザルト】\n` : `【文字企画 リザルト】\n`;
             text += `現在のターン：${gameTurn}ターン目\n`;
             text += `ルール：${modeText} / ${modeType} / ${subType}\n`;
             if (customRules) {
@@ -2914,7 +3224,7 @@
             text += `\n【スコア一覧】\n${scoreText}\n\n`;
             
             if (isTeamMode) {
-                text += `【出せていない文字】\n`;
+                text += `【出せていない文字・お題】\n`;
                 if (gameParticipants.length === 0) {
                     text += "データなし";
                 } else {
@@ -2922,17 +3232,29 @@
                     gameParticipants.forEach(p => {
                         let missingList = gameHistory.filter(h => {
                             return !(h.wonTeams && h.wonTeams.includes(p.name));
-                        }).map(h => `「${h.char}」`);
+                        }).map(h => {
+                            let isHShiri = h.category === "shiritori" || h.chars !== undefined;
+                            return isHShiri ? h.chars.map(c => `「${c}」`).join("→") : `「${h.char}」`;
+                        });
                         
                         let block = `${p.name}\n`;
-                        block += (missingList.length > 0 ? missingList.join("") : "なし");
+                        block += (missingList.length > 0 ? missingList.join("\n") : "なし");
                         teamBlocks.push(block);
                     });
-                    text += teamBlocks.join("\n");
+                    text += teamBlocks.join("\n\n");
                 }
+            } else if (isCoopMode) {
+                text += `【全員で出せていないお題】\n`;
+                let missingList = gameHistory.filter(h => {
+                    return !(h.wonTeams && h.wonTeams.includes("全員"));
+                }).map(h => {
+                    let isHShiri = h.category === "shiritori" || h.chars !== undefined;
+                    return isHShiri ? h.chars.map(c => `「${c}」`).join("→") : `「${h.char}」`;
+                });
+                text += (missingList.length > 0 ? missingList.join("\n") : "なし");
             } else {
                 let historyText = generateHistoryTextForLine() || "なし";
-                text += `【これまでに出た文字】\n${historyText}`;
+                text += `【これまでに出た文字・お題】\n${historyText}`;
             }
             
             navigator.clipboard.writeText(text).then(() => {
@@ -2942,14 +3264,22 @@
 
         function saveGameStateToStorage() {
             let state = {
+                gameCategory: gameCategory,
                 gameHistory: gameHistory,
                 gameParticipants: gameParticipants,
                 lastOdaiText: lastOdaiText,
                 gameTurn: gameTurn,
+                
                 gameModeOption: document.getElementById("gameModeOption").value,
                 gameTypeOption: document.getElementById("gameTypeOption").value,
                 gameSubOption: document.getElementById("gameSubOption").value,
                 gameCustomRulesInput: document.getElementById("gameCustomRulesInput").value,
+                
+                shiriModeOption: document.getElementById("shiriModeOption").value,
+                shiriTypeOption: document.getElementById("shiriTypeOption").value,
+                shiriLengthOption: document.getElementById("shiriLengthOption").value,
+                shiriCustomRulesInput: document.getElementById("shiriCustomRulesInput").value,
+                
                 gameOdaisDisplayHtml: document.getElementById("gameOdaisDisplay").innerHTML
             };
             localStorage.setItem("saved_文字企画_state", JSON.stringify(state));
@@ -2965,30 +3295,51 @@
                 lastOdaiText = state.lastOdaiText || "";
                 gameTurn = state.gameTurn || 0;
                 
+                if (state.gameCategory) {
+                    gameCategory = state.gameCategory;
+                }
+                
                 if(state.gameModeOption) document.getElementById("gameModeOption").value = state.gameModeOption;
                 if(state.gameTypeOption) document.getElementById("gameTypeOption").value = state.gameTypeOption;
                 if(state.gameSubOption) document.getElementById("gameSubOption").value = state.gameSubOption;
                 if(state.gameCustomRulesInput) document.getElementById("gameCustomRulesInput").value = state.gameCustomRulesInput;
+                
+                if(state.shiriModeOption) document.getElementById("shiriModeOption").value = state.shiriModeOption;
+                if(state.shiriTypeOption) document.getElementById("shiriTypeOption").value = state.shiriTypeOption;
+                if(state.shiriLengthOption) document.getElementById("shiriLengthOption").value = state.shiriLengthOption;
+                if(state.shiriCustomRulesInput) document.getElementById("shiriCustomRulesInput").value = state.shiriCustomRulesInput;
+                
                 if(state.gameOdaisDisplayHtml) document.getElementById("gameOdaisDisplay").innerHTML = state.gameOdaisDisplayHtml;
                 
                 document.getElementById("gameTurnSpan").textContent = gameTurn;
                 
-                toggleGameTypeUI(); 
+                switchGameCategory(gameCategory);
             } catch(e) {
                 console.error("データの復元に失敗しました", e);
             }
         }
 
         function promptManualAddChar() {
-            let char = prompt("追加したい文字を1文字入力してください。");
-            if (char === null) return; 
-            char = char.trim();
-            if (char.length !== 1) {
-                alert("1文字ずつしか追加できません！");
-                return;
+            if (gameCategory === "character") {
+                let char = prompt("追加したい文字を1文字入力してください。");
+                if (char === null) return; 
+                char = char.trim();
+                if (char.length !== 1) {
+                    alert("1文字ずつしか追加できません！");
+                    return;
+                }
+                gameHistory.push({ category: "character", mode: "手動追加", char: char, wonTeams: [] });
+            } else {
+                let charsStr = prompt("追加したいしりとり文字を「→」またはカンマ区切りで入力してください。\n例: あ,い または あ→い");
+                if (charsStr === null) return;
+                let chars = charsStr.split(/[→,，]/).map(c => c.trim()).filter(c => c !== "");
+                if (chars.length < 2) {
+                    alert("しりとりは2文字以上指定してください。");
+                    return;
+                }
+                gameHistory.push({ category: "shiritori", mode: "手動追加", chars: chars, wonTeams: [] });
             }
             
-            gameHistory.push({ mode: "手動追加", char: char, wonTeams: [] });
             gameTurn++;
             document.getElementById("gameTurnSpan").textContent = gameTurn;
             
@@ -2998,23 +3349,21 @@
 
         function removeLastHistoryChar() {
             if (gameHistory.length === 0) {
-                alert("削除する文字履歴がありません！");
+                alert("削除する履歴がありません！");
                 return;
             }
             
             let lastItem = gameHistory[gameHistory.length - 1];
-            if (confirm(`最後に登録された「${lastItem.char}」を削除しますか？`)) {
+            let isShiritori = lastItem.category === "shiritori" || lastItem.chars !== undefined;
+            let displayLabel = isShiritori ? lastItem.chars.map(c => `「${c}」`).join("→") : `「${lastItem.char}」`;
+
+            if (confirm(`最後に登録された「${displayLabel}」を削除しますか？`)) {
                 gameHistory.pop();
                 if (gameTurn > 0) gameTurn--;
                 document.getElementById("gameTurnSpan").textContent = gameTurn;
                 
                 selectedHistoryIndex = null;
-                
-                let isTeamMode = document.getElementById("gameTypeOption").value === "team";
-                if (isTeamMode) {
-                    recalculateTeamScores();
-                }
-                
+                recalculateTeamScores();
                 updateGameHistoryDisplay();
                 saveGameStateToStorage();
             }
@@ -3022,14 +3371,20 @@
 
         function exportGameToSpell() {
             let pureState = {
+                gameCategory: gameCategory,
                 players: gameParticipants.map(p => ({ name: p.name, score: p.score, members: p.members || "" })),
-                usedChars: gameHistory.map(h => h.char),
-                historyDetails: gameHistory.map(h => ({ mode: h.mode, char: h.char, wonTeams: h.wonTeams || [] })),
+                usedChars: gameHistory.map(h => h.chars || h.char),
+                historyDetails: gameHistory.map(h => ({ category: h.category || "character", mode: h.mode, chars: h.chars || null, char: h.char || null, wonTeams: h.wonTeams || [] })),
                 turnCount: gameTurn,
                 gameMode: document.getElementById("gameModeOption").value,
                 gameType: document.getElementById("gameTypeOption").value,
                 gameSub: document.getElementById("gameSubOption").value,
-                customRules: document.getElementById("gameCustomRulesInput").value
+                customRules: document.getElementById("gameCustomRulesInput").value,
+                
+                shiriMode: document.getElementById("shiriModeOption").value,
+                shiriType: document.getElementById("shiriTypeOption").value,
+                shiriLength: document.getElementById("shiriLengthOption").value,
+                shiriCustomRules: document.getElementById("shiriCustomRulesInput").value
             };
 
             try {
@@ -3057,10 +3412,20 @@
                 let decoded = JSON.parse(inputText);
                 gameTurn = decoded.turnCount !== undefined ? decoded.turnCount : 0;
                 
+                if (decoded.gameCategory) {
+                    gameCategory = decoded.gameCategory;
+                }
+
                 if (decoded.historyDetails && Array.isArray(decoded.historyDetails)) {
                     gameHistory = decoded.historyDetails;
                 } else if (decoded.usedChars && Array.isArray(decoded.usedChars)) {
-                    gameHistory = decoded.usedChars.map(c => ({ mode: "引き継ぎ", char: c, wonTeams: [] }));
+                    gameHistory = decoded.usedChars.map(c => {
+                        if (Array.isArray(c)) {
+                            return { category: "shiritori", mode: "引き継ぎ", chars: c, wonTeams: [] };
+                        } else {
+                            return { category: "character", mode: "引き継ぎ", char: c, wonTeams: [] };
+                        }
+                    });
                 } else {
                     gameHistory = [];
                 }
@@ -3080,11 +3445,19 @@
                 if(decoded.gameSub) document.getElementById("gameSubOption").value = decoded.gameSub;
                 if(decoded.customRules) document.getElementById("gameCustomRulesInput").value = decoded.customRules;
                 
+                if(decoded.shiriMode) document.getElementById("shiriModeOption").value = decoded.shiriMode;
+                if(decoded.shiriType) document.getElementById("shiriTypeOption").value = decoded.shiriType;
+                if(decoded.shiriLength) document.getElementById("shiriLengthOption").value = decoded.shiriLength;
+                if(decoded.shiriCustomRules) document.getElementById("shiriCustomRulesInput").value = decoded.shiriCustomRules;
+                
                 let displayEl = document.getElementById("gameOdaisDisplay");
                 if (gameHistory.length > 0) {
                     let lastItem = gameHistory[gameHistory.length - 1];
-                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">前回の最後のお題</span><br><b style="font-size:32px; color:var(--primary-dark);">「${escapeHtml(lastItem.char)}」</b>`;
-                    lastOdaiText = `${lastItem.mode || "前回のモード"}\n「${lastItem.char}」`;
+                    let isShiri = lastItem.category === "shiritori" || lastItem.chars !== undefined;
+                    let displayString = isShiri ? lastItem.chars.map(c => `「${c}」`).join("→") : `「${lastItem.char}」`;
+                    
+                    displayEl.innerHTML = `<span style="font-size:14px; color:var(--text-muted);">前回の最後のお題</span><br><b style="font-size:26px; color:var(--primary-dark);">${escapeHtml(displayString)}</b>`;
+                    lastOdaiText = isShiri ? lastItem.chars.map(c => `「${c}」`).join(" → ") : `「${lastItem.char}」`;
                 } else {
                     displayEl.innerHTML = `<span style="color:var(--text-muted);">ボタンを押してお題を引いてね！</span>`;
                     lastOdaiText = "";
@@ -3093,7 +3466,7 @@
                 document.getElementById("gameTurnSpan").textContent = gameTurn;
                 selectedHistoryIndex = null;
 
-                toggleGameTypeUI();
+                switchGameCategory(gameCategory);
                 saveGameStateToStorage();
 
                 textarea.value = ""; 
@@ -3112,6 +3485,7 @@
             selectedHistoryIndex = null;
             document.getElementById("gameTurnSpan").textContent = gameTurn;
             document.getElementById("gameCustomRulesInput").value = "";
+            document.getElementById("shiriCustomRulesInput").value = "";
             document.getElementById("gameOdaisDisplay").innerHTML = `<span style="color:var(--text-muted);">ボタンを押してお題を引いてね！</span>`;
             
             localStorage.removeItem("saved_文字企画_state"); 
