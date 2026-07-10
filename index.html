@@ -8,6 +8,10 @@
     <link class="apple-touch-icon" rel="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
 
+    <!-- 📍 距離企画の地図表示用（Leaflet + OpenStreetMap、APIキー不要） -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="stations.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -977,10 +981,9 @@
                 <summary style="color: #e67e22; font-size: 14px;">✨ マイ駅の一括追加（貼り付け）</summary>
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;">
-                        改行ごとに駅名を入力してね！<br>
-                        例：梅田（阪急電鉄） / 大久保（東京都）
+                        改行ごとに駅名を入力してね！
                     </p>
-                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）&#13;東京"></textarea>
+                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="柏原（大阪府・西日本旅客鉄道）&#13;大宮（埼玉県）&#13;尼崎（阪神電気鉄道）&#13;東京"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; margin-top: 5px;">まとめてマイ駅に登録</button>
                     
                     <div id="bulkResultLog" class="log-box hidden"></div>
@@ -1096,11 +1099,11 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：ルールを自由に記入してください"></textarea>
+                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
                 </div>
             </div>
 
-            <!-- 📍 距離企画設定 -->
+            <!-- 📍 距離企画設定 (役職点数を倍率に、各順位の点数設定を可能に改良) -->
             <div id="distanceGameSettings" class="bento-card hidden">
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ 距離企画ルール設定</p>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
@@ -1131,22 +1134,48 @@
                     </div>
                 </div>
 
+                <!-- 🌟 順位ごとの基本得点設定 -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; background: rgba(0,0,0,0.02); padding: 8px; border-radius: 8px; border:1px solid var(--glass-border);">
+                    <div style="grid-column: span 5; font-size: 11px; font-weight:bold; color: var(--primary-dark);">🏆 順位（ランク）ごとの基本点数</div>
+                    <div>
+                        <span style="font-size: 10px; color:var(--text-muted);">1位基本点</span>
+                        <input type="number" id="distRank1PointsInput" value="5" min="0" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                    </div>
+                    <div>
+                        <span style="font-size: 10px; color:var(--text-muted);">2位基本点</span>
+                        <input type="number" id="distRank2PointsInput" value="3" min="0" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                    </div>
+                    <div>
+                        <span style="font-size: 10px; color:var(--text-muted);">3位基本点</span>
+                        <input type="number" id="distRank3PointsInput" value="2" min="0" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                    </div>
+                    <div>
+                        <span style="font-size: 10px; color:var(--text-muted);">4位基本点</span>
+                        <input type="number" id="distRank4PointsInput" value="1" min="0" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                    </div>
+                    <div>
+                        <span style="font-size: 10px; color:var(--text-muted);">5位基本点</span>
+                        <input type="number" id="distRank5PointsInput" value="1" min="0" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                    </div>
+                </div>
+
+                <!-- 🌟 役職倍率 ＆ ピタリ・その他設定 -->
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; background: rgba(0,0,0,0.02); padding: 8px; border-radius: 8px; border:1px solid var(--glass-border);">
-                    <div style="grid-column: span 4; font-size: 11px; font-weight:bold; color: var(--primary-dark);">🎖️ 役職ピンの設定 (最大エントリー駅数 / 獲得ベース点)</div>
+                    <div style="grid-column: span 4; font-size: 11px; font-weight:bold; color: var(--primary-dark);">🎖️ 役職ピンの設定 (最大ピン数 / 順位得点にかかる倍率)</div>
                     <div>
-                        <span style="font-size: 10px; color:var(--text-muted);">大将数/点</span>
+                        <span style="font-size: 10px; color:var(--text-muted);">大将数/倍率</span>
                         <input type="number" id="distTaishoCountInput" value="1" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
-                        <input type="number" id="distTaishoPointsInput" value="5" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                        <input type="number" id="distTaishoMultiplierInput" value="3" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
                     </div>
                     <div>
-                        <span style="font-size: 10px; color:var(--text-muted);">中将数/点</span>
+                        <span style="font-size: 10px; color:var(--text-muted);">中将数/倍率</span>
                         <input type="number" id="distChujoCountInput" value="2" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
-                        <input type="number" id="distChujoPointsInput" value="3" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                        <input type="number" id="distChujoMultiplierInput" value="2" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
                     </div>
                     <div>
-                        <span style="font-size: 10px; color:var(--text-muted);">普通数/点</span>
+                        <span style="font-size: 10px; color:var(--text-muted);">普通数</span>
                         <input type="number" id="distFutsuCountInput" value="3" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
-                        <input type="number" id="distFutsuPointsInput" value="1" min="1" style="padding: 4px; font-size:12px; margin-top:2px;" oninput="saveGameStateToStorage()">
+                        <div style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:6px; font-weight:bold;">等倍固定</div>
                     </div>
                     <div>
                         <span style="font-size: 10px; color:var(--text-muted);">ピタリ倍率</span>
@@ -1156,7 +1185,7 @@
 
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
+                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルール説明を入力してください"></textarea>
                 </div>
             </div>
 
@@ -1352,9 +1381,27 @@
                 <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeHistoryModal(null)">&times;</button>
             </div>
             <div id="modalBody" class="modal-body" style="white-space: pre-wrap; font-family: monospace; line-height: 1.5;"></div>
+            <div id="distanceResultMapContainer" style="display:none; padding: 0 20px 16px 20px;">
+                <div id="distanceResultMap" style="height: 260px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);"></div>
+                <div id="distanceResultMapLegend" style="margin-top: 8px; font-size: 11.5px; color: var(--text-muted); line-height: 1.6;"></div>
+            </div>
             <div class="modal-footer">
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="copyModalContent()">📋 この結果をコピー</button>
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeHistoryModal(null)">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 駅情報モーダル（詳細・座標・地図） -->
+    <div id="stationInfoModal" class="modal-overlay" onclick="closeStationInfoModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span id="stationInfoTitle">駅情報</span>
+                <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeStationInfoModal(null)">&times;</button>
+            </div>
+            <div id="stationInfoBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeStationInfoModal(null)">閉じる</button>
             </div>
         </div>
     </div>
@@ -1602,6 +1649,43 @@
 
         function sanitizeKey(str) {
             return encodeURIComponent(str).replace(/\./g, "%2E");
+        }
+
+        // 🌟 マイ駅の保存キーを生成（新規保存は「都道府県・鉄道会社」の順で統一）
+        function makeStationFullName(s) {
+            return `${s.name}（${s.pref}・${s.company}）`;
+        }
+
+        // 🌟 これまでの表記ゆれ（会社・県順／県・会社順／会社のみ）を全て含めた候補一覧を返す
+        function stationFullNameVariants(s) {
+            return [
+                `${s.name}（${s.pref}・${s.company}）`,
+                `${s.name}（${s.company}・${s.pref}）`,
+                `${s.name}（${s.company}）`
+            ];
+        }
+
+        // 🌟 表記順にかかわらず、配列にこの駅が含まれているかを判定
+        function isStationInList(list, s) {
+            if (!list || !s) return false;
+            return stationFullNameVariants(s).some(v => list.includes(v));
+        }
+
+        // 🌟 表記順にかかわらず、配列からこの駅を全て取り除いた新しい配列を返す
+        function removeStationFromList(list, s) {
+            if (!list) return [];
+            let variants = stationFullNameVariants(s);
+            return list.filter(n => !variants.includes(n));
+        }
+
+        // 🌟 表記ゆれ（保存順の違い）に関わらず、副駅名の個人設定を探す
+        function getSubNameOverride(overrides, s) {
+            if (!overrides) return null;
+            let variants = stationFullNameVariants(s);
+            for (let i = 0; i < variants.length; i++) {
+                if (overrides[sanitizeKey(variants[i])]) return overrides[sanitizeKey(variants[i])];
+            }
+            return null;
         }
 
         // ニックネーム取得
@@ -2004,7 +2088,7 @@
             let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
             myCustoms.push(newStation);
 
-            // 🌟 同名駅完全識別のために、ここでも都道府県を補完したフォーマットを適用
+            // 🌟 同名駅完全識ために、ここでも都道府県を補完したフォーマットを適用
             let fullName = `${name}（${company}・${pref}）`;
             let myOwnStations = [...getOwnStationsArray(currentUser)];
             if (!myOwnStations.includes(fullName)) myOwnStations.push(fullName);
@@ -2065,9 +2149,7 @@
 
             myCustoms.splice(index, 1);
 
-            let fullName = `${target.name}（${target.company}・${target.pref}）`;
-            let legacyFullName = `${target.name}（${target.company}）`;
-            let myOwnStations = getOwnStationsArray(currentUser).filter(n => n !== fullName && n !== legacyFullName);
+            let myOwnStations = removeStationFromList(getOwnStationsArray(currentUser), target);
 
             database.ref("users/" + currentUser).update({
                 customStations: myCustoms,
@@ -2133,17 +2215,13 @@
             database.ref("users/" + currentUser + "/myOwnStations").set(arr);
         }
 
-        function addOwnStation(stationName) {
+        function addOwnStation(station) {
             if (!currentUser) return;
             let myOwnStations = [...getOwnStationsArray(currentUser)];
-            if (myOwnStations.includes(stationName)) { alert("すでに登録されています！"); return; }
-            myOwnStations.push(stationName);
+            if (isStationInList(myOwnStations, station)) { alert("すでに登録されています！"); return; }
+            myOwnStations.push(makeStationFullName(station));
             saveOwnStationsArray(myOwnStations);
-            
-            let cleanName = stationName;
-            let splitIdx = stationName.indexOf("（");
-            if (splitIdx !== -1) { cleanName = stationName.substring(0, splitIdx); }
-            alert("「" + cleanName + "」をマイ駅に追加しました！");
+            alert("「" + station.name + "」をマイ駅に追加しました！");
         }
 
         function removeOwnStation(stationName) {
@@ -2213,14 +2291,12 @@
                 } else if (candidates.length === 1) {
                     // 駅候補がそもそも1つしかない場合
                     let s = candidates[0];
-                    let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
-                    let legacyFullName = `${s.name}（${s.company}）`; // 旧互換チェック用
                     
-                    if (myOwnStations.includes(fullNameForSave) || myOwnStations.includes(legacyFullName)) {
-                        reportMessages.push(`⚠️ 【重複】${s.name}（${s.company}・${s.pref}）は既にマイ駅にあります。`);
+                    if (isStationInList(myOwnStations, s)) {
+                        reportMessages.push(`⚠️ 【重複】${s.name}（${s.pref}・${s.company}）は既にマイ駅にあります。`);
                     } else {
-                        myOwnStations.push(fullNameForSave);
-                        reportMessages.push(`✅ 【登録】${s.name}（${s.company}・${s.pref}）`);
+                        myOwnStations.push(makeStationFullName(s));
+                        reportMessages.push(`✅ 【登録】${s.name}（${s.pref}・${s.company}）`);
                     }
                 } else {
                     // 同名駅が複数ある場合（例：大久保）の絞り込み処理
@@ -2236,24 +2312,20 @@
                     if (matched.length === 1) {
                         // 絞り込みに成功した
                         let s = matched[0];
-                        let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
-                        let legacyFullName = `${s.name}（${s.company}）`;
                         
-                        if (myOwnStations.includes(fullNameForSave) || myOwnStations.includes(legacyFullName)) {
-                            reportMessages.push(`⚠️ 【重複】${s.name}（${s.company}・${s.pref}）は既にマイ駅にあります。`);
+                        if (isStationInList(myOwnStations, s)) {
+                            reportMessages.push(`⚠️ 【重複】${s.name}（${s.pref}・${s.company}）は既にマイ駅にあります。`);
                         } else {
-                            myOwnStations.push(fullNameForSave);
-                            reportMessages.push(`✅ 【登録】${s.name}（${s.company}・${s.pref}）`);
+                            myOwnStations.push(makeStationFullName(s));
+                            reportMessages.push(`✅ 【登録】${s.name}（${s.pref}・${s.company}）`);
                         }
                     } else if (matched.length > 1) {
-                        // ヒントがないか、ヒントを使っても絞りきれない場合は全ての候補をマイ駅に一括登録
+                        // ヒントがないか、ヒントを使っても絞りきれない場合はすべての候補をマイ駅に一括登録
                         let addedInfos = [];
                         matched.forEach(s => {
-                            let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
-                            let legacyFullName = `${s.name}（${s.company}）`;
-                            if (!myOwnStations.includes(fullNameForSave) && !myOwnStations.includes(legacyFullName)) {
-                                myOwnStations.push(fullNameForSave);
-                                addedInfos.push(`${s.company}・${s.pref}`);
+                            if (!isStationInList(myOwnStations, s)) {
+                                myOwnStations.push(makeStationFullName(s));
+                                addedInfos.push(`${s.pref}・${s.company}`);
                             }
                         });
                         if (addedInfos.length > 0) {
@@ -2264,9 +2336,8 @@
                     } else {
                         // ヒントと一致するものが全滅した場合は、デフォルトで最初の1件を登録
                         let s = candidates[0];
-                        let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
-                        myOwnStations.push(fullNameForSave);
-                        reportMessages.push(`❓ 【部分照合登録】「${inputLine}」に対応する特定の駅が見つからなかったため、候補から「${s.name}（${s.company}・${s.pref}）」を仮登録しました。`);
+                        myOwnStations.push(makeStationFullName(s));
+                        reportMessages.push(`❓ 【部分照合登録】「${inputLine}」に対応する特定の駅が見つからなかったため、候補から「${s.name}（${s.pref}・${s.company}）」を仮登録しました。`);
                     }
                 }
             });
@@ -2316,11 +2387,9 @@
                 let baseWithCustoms = allStations.concat(extraCustoms);
 
                 sourceList = baseWithCustoms.filter(s => {
-                    let fullNameForSave = `${s.name}（${s.company}・${s.pref}）`;
-                    let legacyFullName = `${s.name}（${s.company}）`;
                     return checkedMembers.some(member => {
                         let ownStations = getOwnStationsArray(member);
-                        return ownStations.includes(fullNameForSave) || ownStations.includes(legacyFullName);
+                        return isStationInList(ownStations, s);
                     });
                 });
             } else {
@@ -2387,9 +2456,6 @@
             let pageItems = results.slice(startIdx, startIdx + PAGE_SIZE);
 
             pageItems.forEach(item => {
-                let fullNameForSave = `${item.name}（${item.company}・${item.pref}）`;
-                let legacyFullName = `${item.name}（${item.company}）`; // 旧互換チェック用
-                
                 let li = document.createElement("li");
                 li.className = "station-card";
 
@@ -2432,11 +2498,11 @@
                 let owners = [];
                 Object.keys(allUserData).sort((a, b) => nickOf(a).localeCompare(nickOf(b), 'ja')).forEach(uid => {
                     let ownStations = getOwnStationsArray(uid);
-                    if (ownStations.includes(fullNameForSave) || ownStations.includes(legacyFullName)) {
+                    if (isStationInList(ownStations, item)) {
                         let label = nickOf(uid);
 
                         let overrides = (allUserData[uid] && allUserData[uid].subNameOverrides) ? allUserData[uid].subNameOverrides : {};
-                        let personalSub = overrides[sanitizeKey(fullNameForSave)] || overrides[sanitizeKey(legacyFullName)];
+                        let personalSub = getSubNameOverride(overrides, item);
                         if (personalSub) {
                             label += `（${personalSub}）`;
                         } else if (item.subName) {
@@ -2453,6 +2519,9 @@
                     pOwners.textContent = `所持: ${owners.join(", ")}`;
                     infoDiv.appendChild(pOwners);
                 }
+                infoDiv.style.cursor = "pointer";
+                infoDiv.title = "タップして駅の詳細・地図を見る";
+                infoDiv.onclick = () => openStationInfoModal(item);
                 li.appendChild(infoDiv);
 
                 let btnGroup = document.createElement("div");
@@ -2475,14 +2544,14 @@
                 ownBtn.className = "own-btn";
                 
                 // 🌟 新旧の格納文字列のいずれかに合致していれば登録済扱いとする
-                if (ownNames.includes(fullNameForSave) || ownNames.includes(legacyFullName)) {
+                if (isStationInList(ownNames, item)) {
                     ownBtn.textContent = "登録済";
                     ownBtn.style.backgroundColor = "rgba(128, 128, 128, 0.15)";
                     ownBtn.style.color = "var(--text-muted)";
                     ownBtn.disabled = true;
                 } else {
                     ownBtn.textContent = "マイ駅";
-                    ownBtn.onclick = () => addOwnStation(fullNameForSave);
+                    ownBtn.onclick = () => addOwnStation(item);
                 }
                 btnGroup.appendChild(ownBtn);
 
@@ -2612,11 +2681,7 @@
 
             myOwnNames.forEach(fullName => {
                 // 新旧どちらのキー名でもマッチングできるように判定を強化
-                let stationObj = lookupList.find(s => {
-                    let opt1 = `${s.name}（${s.company}・${s.pref}）` === fullName;
-                    let opt2 = `${s.name}（${s.company}）` === fullName;
-                    return opt1 || opt2;
-                });
+                let stationObj = lookupList.find(s => stationFullNameVariants(s).includes(fullName));
                 
                 if (!stationObj) {
                     let idx = fullName.indexOf("（");
@@ -2776,12 +2841,16 @@
                     subEditInput.value = item.subName || "";
                     subEditInput.placeholder = "自分用の副駅名（空欄で共通駅名）";
                     subEditInput.style.cssText = "flex:1; padding:6px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
+                    subEditInput.onclick = (e) => e.stopPropagation();
                     subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value);
                     subEditRow.appendChild(subEditInput);
 
                     infoDiv.appendChild(subEditRow);
                 }
 
+                infoDiv.style.cursor = "pointer";
+                infoDiv.title = "タップして駅の詳細・地図を見る";
+                infoDiv.onclick = () => openStationInfoModal(item);
                 li.appendChild(infoDiv);
 
                 if (isEditMode && targetUser === currentUser) {
@@ -3029,7 +3098,7 @@
                 // マイ駅から抽選
                 let myOwnNames = getOwnStationsArray(currentUser);
                 myOwnNames.forEach(fullName => {
-                    let sObj = combinedStationsList.find(s => `${s.name}（${s.company}・${s.pref}）` === fullName || `${s.name}（${s.company}）` === fullName);
+                    let sObj = combinedStationsList.find(s => stationFullNameVariants(s).includes(fullName));
                     if (sObj) pool.push(sObj);
                 });
             } else {
@@ -3051,139 +3120,6 @@
 
             let finalStation = poolWithCoords[Math.floor(Math.random() * poolWithCoords.length)];
             startDistanceSlotAnimation(finalStation);
-        }
-
-        // 🌟 改善：スロットアニメーションの駅名表示カラーを完全に引き継ぐことでライトモードでの「白文字隠れバグ」を完全解消
-        function startSlotAnimation(type, finalStation, finalIndex, finalChar) {
-            let count = 0;
-            let displayEl = document.getElementById("gameOdaisDisplay");
-            if (slotInterval) clearInterval(slotInterval);
-            
-            selectedHistoryIndex = null;
-            renderTeamTogglePanel();
-
-            slotInterval = setInterval(() => {
-                count++;
-                if (type === "rand") {
-                    let randStation = combinedStationsList[Math.floor(Math.random() * combinedStationsList.length)];
-                    let randIdx = Math.floor(Math.random() * randStation.name.length) + 1;
-                    let randChar = randStation.name.charAt(randIdx - 1) || "？";
-                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.8; font-weight:500;">${escapeHtml(randStation.name)}</span><br><b style="font-size:24px; color:var(--primary);">${randIdx}文字目 → 「${escapeHtml(randChar)}」</b>`;
-                } else if (type === "jouyo") {
-                    let randChar = cachedKanjiChars[Math.floor(Math.random() * cachedKanjiChars.length)] || "駅";
-                    displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">常用漢字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
-                } else {
-                    let randChar = cachedAllChars[Math.floor(Math.random() * cachedAllChars.length)] || "あ";
-                    displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">全駅文字スロット</span><br><b style="font-size:32px; color:var(--primary);">「${escapeHtml(randChar)}」</b>`;
-                }
-                
-                if (count >= 30) { 
-                    clearInterval(slotInterval);
-                    slotInterval = null;
-                    
-                    let modeTitle = "";
-                    if (type === "rand") {
-                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
-                        modeTitle = "駅名乱数モード";
-                        lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
-                    } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
-                        modeTitle = "常用漢字モード";
-                        lastOdaiText = `「${finalChar}」`;
-                    } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
-                        modeTitle = "全駅文字モード";
-                        lastOdaiText = `「${finalChar}」`;
-                    }
-                    
-                    gameHistory.push({ category: "character", mode: modeTitle, char: finalChar, wonTeams: [] });
-                    gameTurn++;
-                    document.getElementById("gameTurnSpan").textContent = gameTurn;
-                    
-                    updateGameHistoryDisplay();
-                    saveGameStateToStorage(); 
-                }
-            }, 100); 
-        }
-
-        // 🌟 しりとり用スロットアニメーション
-        function startShiritoriSlotAnimation(mode, finalChars, length) {
-            let count = 0;
-            let displayEl = document.getElementById("gameOdaisDisplay");
-            if (slotInterval) clearInterval(slotInterval);
-            
-            selectedHistoryIndex = null;
-            renderTeamTogglePanel();
-
-            slotInterval = setInterval(() => {
-                count++;
-                let tempChars = [];
-                for (let i = 0; i < length; i++) {
-                    let randChar = "";
-                    if (mode === "jouyo") {
-                        randChar = cachedKanjiChars[Math.floor(Math.random() * cachedKanjiChars.length)] || "駅";
-                    } else {
-                        randChar = cachedAllChars[Math.floor(Math.random() * cachedAllChars.length)] || "あ";
-                    }
-                    tempChars.push(`「${randChar}」`);
-                }
-                displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">しりとりスロット</span><br><b style="font-size:22px; color:var(--primary);">${tempChars.join(" → ")}</b>`;
-                
-                if (count >= 30) {
-                    clearInterval(slotInterval);
-                    slotInterval = null;
-                    
-                    let displayString = finalChars.map(c => `「${c}」`).join(" → ");
-                    let modeTitle = "";
-                    if (mode === "rand") modeTitle = "しりとり (駅名乱数)";
-                    else if (mode === "jouyo") modeTitle = "しりとり (常用漢字)";
-                    else modeTitle = "しりとり (全駅文字)";
-                    
-                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 ${escapeHtml(modeTitle)}</span><br><b style="font-size:26px; color:var(--primary);">${escapeHtml(displayString)}</b>`;
-                    
-                    lastOdaiText = finalChars.map(c => `「${c}」`).join(" → ");
-                    
-                    gameHistory.push({
-                        category: "shiritori",
-                        mode: modeTitle,
-                        chars: finalChars,
-                        wonTeams: []
-                    });
-                    gameTurn++;
-                    document.getElementById("gameTurnSpan").textContent = gameTurn;
-                    
-                    updateGameHistoryDisplay();
-                    saveGameStateToStorage();
-                }
-            }, 100);
-        }
-
-        // 🌟 📍 距離企画用お題駅スロットアニメーション (アニメーション終了時に自動で距離測定を実行)
-        function startDistanceSlotAnimation(finalStation) {
-            let count = 0;
-            let displayEl = document.getElementById("gameOdaisDisplay");
-            if (slotInterval) clearInterval(slotInterval);
-            
-            selectedHistoryIndex = null;
-
-            slotInterval = setInterval(() => {
-                count++;
-                let randStation = combinedStationsList[Math.floor(Math.random() * combinedStationsList.length)];
-                displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">距離お題抽選スロット</span><br><b style="font-size:20px; color:var(--primary);">${escapeHtml(randStation.name)}（${escapeHtml(randStation.pref)}）</b>`;
-                
-                if (count >= 30) {
-                    clearInterval(slotInterval);
-                    slotInterval = null;
-                    
-                    let fullName = `${finalStation.name}（${finalStation.pref}・${finalStation.company}）`;
-                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">📍 距離お題駅</span><br><b style="font-size:24px; color:var(--primary-dark);">${escapeHtml(fullName)}</b>`;
-                    
-                    lastOdaiText = fullName;
-                    
-                    // 🌟 ここでお題を引いた瞬間に、事前登録されたピンとの距離を自動測定！
-                    calculateDistanceScores();
-                }
-            }, 100);
         }
 
         // 🌟 stations.js に登録された緯度経度（lat / lng）を使って座標を取得する。
@@ -3381,22 +3317,45 @@
                 
                 stationText = stationText.trim();
 
-                let foundStation = combinedStationsList.find(s => 
-                    `${s.name}（${s.company}・${s.pref}）` === stationText || 
-                    `${s.name}（${s.pref}・${s.company}）` === stationText ||
-                    `${s.name}（${s.company}）` === stationText
-                );
+                // 🌟 カッコ内のヒント（都道府県／鉄道会社）を順不同・片方のみでも柔軟に解析
+                let targetName = stationText;
+                let hintPref = null;
+                let hintCompany = null;
 
-                if (!foundStation) {
-                    let cleanName = stationText;
-                    let braceIdx = stationText.indexOf("（");
-                    if (braceIdx === -1) braceIdx = stationText.indexOf("(");
-                    if (braceIdx !== -1) {
-                        cleanName = stationText.substring(0, braceIdx).trim();
-                    }
-                    const candidates = combinedStationsList.filter(s => s.name === cleanName);
-                    if (candidates.length === 1) {
-                        foundStation = candidates[0];
+                let braceIdx = stationText.indexOf("（");
+                if (braceIdx === -1) braceIdx = stationText.indexOf("(");
+
+                if (braceIdx !== -1 && (stationText.endsWith("）") || stationText.endsWith(")"))) {
+                    targetName = stationText.substring(0, braceIdx).trim();
+                    let inside = stationText.substring(braceIdx + 1, stationText.length - 1).trim();
+                    let parts = inside.split(/[・／/,\s]+/);
+
+                    parts.forEach(part => {
+                        let trimmed = part.trim();
+                        if (trimmed === "") return;
+                        if (prefOrder.some(p => p.startsWith(trimmed)) || trimmed.endsWith("県") || trimmed.endsWith("府") || trimmed.endsWith("都") || trimmed === "北海道") {
+                            hintPref = trimmed;
+                        } else {
+                            hintCompany = trimmed;
+                        }
+                    });
+                }
+
+                let candidates = combinedStationsList.filter(s => s.name === targetName);
+                let foundStation = null;
+
+                if (candidates.length === 1) {
+                    foundStation = candidates[0];
+                } else if (candidates.length > 1) {
+                    let matched = candidates;
+                    if (hintPref) matched = matched.filter(s => s.pref.includes(hintPref));
+                    if (hintCompany) matched = matched.filter(s => s.company.includes(hintCompany) || (s.line && s.line.includes(hintCompany)));
+
+                    if (matched.length === 1) {
+                        foundStation = matched[0];
+                    } else if (matched.length > 1) {
+                        errorMessages.push(`「${targetName}」は同名駅が複数あり絞り込めませんでした（都道府県・鉄道会社どちらも指定してください）：` + matched.map(c => `${c.pref}・${c.company}`).join(' / '));
+                        return;
                     }
                 }
 
@@ -3498,7 +3457,7 @@
             });
         }
 
-        // 📍 距離測定＆得点反映＆履歴保存のメイン処理 (お題を引いた直後に自動実行)
+        // 📍 距離測定＆得点反映＆履歴保存のメイン処理 (新仕様の順位点設定・役職倍率判定に対応)
         function calculateDistanceScores() {
             if (!lastOdaiText) return;
 
@@ -3533,7 +3492,7 @@
             let listWithScores = [];
 
             if (currentPins.length > 0) {
-                // 座標未登録のピンは距離計算から除外する（本来は登録時点で弾いているが念のため二重チェック）
+                // 座標未登録のピンは距離計算から除外
                 let skippedPins = currentPins.filter(p => !hasValidCoords(p.stationObj));
                 let validPins = currentPins.filter(p => hasValidCoords(p.stationObj));
 
@@ -3556,10 +3515,19 @@
                 // 距離の近い順（昇順）にソート
                 list.sort((a, b) => a.distance - b.distance);
 
-                // 点数設定値
-                let pointsTaisho = parseInt(document.getElementById("distTaishoPointsInput").value, 10) || 5;
-                let pointsChujo = parseInt(document.getElementById("distChujoPointsInput").value, 10) || 3;
-                let pointsFutsu = parseInt(document.getElementById("distFutsuPointsInput").value, 10) || 1;
+                // 順位ごとの基本得点の取得
+                let rankPoints = {
+                    1: parseInt(document.getElementById("distRank1PointsInput").value, 10) || 5,
+                    2: parseInt(document.getElementById("distRank2PointsInput").value, 10) || 3,
+                    3: parseInt(document.getElementById("distRank3PointsInput").value, 10) || 2,
+                    4: parseInt(document.getElementById("distRank4PointsInput").value, 10) || 1,
+                    5: parseInt(document.getElementById("distRank5PointsInput").value, 10) || 1
+                };
+
+                // 役職ごとの倍率設定の取得
+                let multTaisho = parseInt(document.getElementById("distTaishoMultiplierInput").value, 10) || 3;
+                let multChujo = parseInt(document.getElementById("distChujoMultiplierInput").value, 10) || 2;
+                let multFutsu = 1; // 普通は等倍
 
                 let currentRank = 1;
                 let prevDistance = -1;
@@ -3575,13 +3543,20 @@
                     let isRankedIn = currentRank <= rankLimit;
 
                     if (isRankedIn) {
-                        let basePoints = pointsFutsu;
-                        if (p.type === "大将") basePoints = pointsTaisho;
-                        else if (p.type === "中将") basePoints = pointsChujo;
+                        // 🌟 1. 順位による基本点を決定（1位〜5位、それ以外は0点）
+                        let basePoints = rankPoints[currentRank] || 0;
 
-                        pointsEarned = basePoints;
+                        // 🌟 2. 役職による掛け算倍率を決定（普通は1倍、大将・中将は設定値）
+                        let roleMultiplier = multFutsu;
+                        if (p.type === "大将") roleMultiplier = multTaisho;
+                        else if (p.type === "中将") roleMultiplier = multChujo;
+
+                        // 役職倍率を掛け算
+                        pointsEarned = basePoints * roleMultiplier;
+
+                        // 🌟 3. 同名駅ピタリ判定があればさらにピタリ倍率を掛け算
                         if (p.isPitari) {
-                            pointsEarned = basePoints * pitariMultiplier;
+                            pointsEarned = pointsEarned * pitariMultiplier;
                         }
 
                         // プレイヤーのベース得点に即時加算
@@ -3703,7 +3678,7 @@
             renderTeamTogglePanel();
         }
 
-        // 🌟 モーダル詳細ウィンドウの表示
+        // 🌟 モーダル詳細ウィンドウの表示 (新出力テキストフォーマットに準拠)
         let currentModalTextToCopy = "";
         function showHistoryDetailModal(idx) {
             const h = gameHistory[idx];
@@ -3718,7 +3693,7 @@
 
             let text = "";
             if (h.category === "distance") {
-                // 距離企画のフォーマット (ご要望のコピー形式)
+                // 🌟 【改良】お友達とLINEで共有するご要望の完全なフォーマット！
                 let odaiName = h.odai;
                 text += `お題\n${odaiName}\n\n`;
 
@@ -3726,22 +3701,14 @@
                 if (rankedPins.length === 0) {
                     text += "得点対象となったピンはありませんでした。\n";
                 } else {
-                    let rankGroups = {};
-                    rankedPins.forEach(r => {
-                        if (!rankGroups[r.rank]) rankGroups[r.rank] = { points: r.points, players: [] };
-                        rankGroups[r.rank].players.push(r);
-                    });
+                    rankedPins.forEach(p => {
+                        let suffixTag = "";
+                        if (p.isPitari) suffixTag = "　ピタリ";
+                        else if (p.type !== "普通") suffixTag = `　${p.type}`;
 
-                    Object.keys(rankGroups).sort((a,b) => a-b).forEach(rank => {
-                        let group = rankGroups[rank];
-                        text += `${rank}位　${group.points}点\n`;
-                        
-                        group.players.forEach(p => {
-                            text += `メンバー　${p.player}\n`;
-                            let prefix = p.type === "普通" ? "" : `${p.type}　`;
-                            let pitariStr = p.isPitari ? ' (ピタリ！)' : '';
-                            text += `　${prefix}${p.stationName}${pitariStr}\n`;
-                        });
+                        text += `${p.rank}位　${p.player}${suffixTag}\n`;
+                        text += `　${p.points}点　${p.stationName}\n`;
+                        text += `　　　　（${p.distance}km）\n`;
                     });
                 }
             } else if (h.category === "shiritori") {
@@ -3762,10 +3729,169 @@
 
             body.textContent = text;
             currentModalTextToCopy = text.trim();
+
+            renderDistanceResultMap(h);
+        }
+
+        // 🌟 距離企画のターン結果を、お題駅を中心に地図上に表示する（Leaflet + OpenStreetMap）
+        let distanceResultMapInstance = null;
+        function renderDistanceResultMap(h) {
+            const mapContainer = document.getElementById("distanceResultMapContainer");
+            const legend = document.getElementById("distanceResultMapLegend");
+
+            if (distanceResultMapInstance) {
+                distanceResultMapInstance.remove();
+                distanceResultMapInstance = null;
+            }
+
+            if (!h || h.category !== "distance" || typeof L === "undefined") {
+                mapContainer.style.display = "none";
+                return;
+            }
+
+            refreshCombinedStations();
+
+            let odaiStation = combinedStationsList.find(s => stationFullNameVariants(s).includes(h.odai));
+            if (!odaiStation || !hasValidCoords(odaiStation)) {
+                mapContainer.style.display = "none";
+                return;
+            }
+
+            let rankedPins = (h.results || []).filter(r => r.isRankedIn);
+            let pinsWithCoords = rankedPins.map(r => {
+                let sObj = combinedStationsList.find(s => stationFullNameVariants(s).includes(r.stationName));
+                return (sObj && hasValidCoords(sObj)) ? { r, sObj } : null;
+            }).filter(Boolean);
+
+            mapContainer.style.display = "block";
+
+            // Leafletはコンテナが実際に画面に表示された後でないと正しく初期化できないため少し待つ
+            setTimeout(() => {
+                distanceResultMapInstance = L.map("distanceResultMap", { scrollWheelZoom: false });
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    attribution: "&copy; OpenStreetMap contributors",
+                    maxZoom: 18
+                }).addTo(distanceResultMapInstance);
+
+                let bounds = [];
+                let legendLines = [];
+
+                // お題駅（中心・赤ピン）
+                let odaiIcon = L.divIcon({
+                    className: "",
+                    html: '<div style="background:#ef4444; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 2px 6px rgba(0,0,0,0.4); border:2px solid white;">📍</div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+                L.marker([odaiStation.lat, odaiStation.lng], { icon: odaiIcon })
+                    .addTo(distanceResultMapInstance)
+                    .bindPopup(`<b>お題駅</b><br>${escapeHtml(odaiStation.name)}`);
+                bounds.push([odaiStation.lat, odaiStation.lng]);
+                legendLines.push(`📍 お題駅：${odaiStation.name}`);
+
+                let rankColors = ["#eab308", "#94a3b8", "#b45309", "#00a497"]; // 1位,2位,3位,それ以降
+
+                pinsWithCoords.forEach(({ r, sObj }) => {
+                    let color = rankColors[Math.min(Math.max(r.rank - 1, 0), rankColors.length - 1)];
+                    let pinIcon = L.divIcon({
+                        className: "",
+                        html: `<div style="background:${color}; color:white; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.4); border:2px solid white;">${r.rank}</div>`,
+                        iconSize: [26, 26],
+                        iconAnchor: [13, 13]
+                    });
+                    let pitariStr = r.isPitari ? " 🎯ピタリ！" : "";
+                    L.marker([sObj.lat, sObj.lng], { icon: pinIcon })
+                        .addTo(distanceResultMapInstance)
+                        .bindPopup(`<b>${r.rank}位（${r.points}点）</b><br>${escapeHtml(r.player)}（${escapeHtml(r.type)}）<br>${escapeHtml(sObj.name)}<br>${r.distance}km${pitariStr}`);
+                    bounds.push([sObj.lat, sObj.lng]);
+                    legendLines.push(`${r.rank}位 ${r.player}：${sObj.name}（${r.distance}km）${pitariStr}`);
+                });
+
+                if (bounds.length > 1) {
+                    distanceResultMapInstance.fitBounds(bounds, { padding: [30, 30] });
+                } else {
+                    distanceResultMapInstance.setView(bounds[0], 12);
+                }
+
+                legend.innerHTML = legendLines.map(l => escapeHtml(l)).join("<br>");
+            }, 50);
         }
 
         function closeHistoryModal(e) {
             const modal = document.getElementById("historyDetailModal");
+            modal.classList.remove("active");
+            if (distanceResultMapInstance) {
+                distanceResultMapInstance.remove();
+                distanceResultMapInstance = null;
+            }
+            document.getElementById("distanceResultMapContainer").style.display = "none";
+        }
+
+        // 🌟 駅カードをタップした時に、駅の詳細情報・座標・地図を表示する
+        function openStationInfoModal(station) {
+            if (!station) return;
+
+            document.getElementById("stationInfoTitle").textContent = `${station.name}`;
+
+            let body = document.getElementById("stationInfoBody");
+            body.innerHTML = "";
+
+            let addRow = (label, value) => {
+                if (!value) return;
+                let row = document.createElement("div");
+                row.style.cssText = "margin-bottom: 10px;";
+                let labelSpan = document.createElement("div");
+                labelSpan.textContent = label;
+                labelSpan.style.cssText = "font-size: 11px; color: var(--text-muted); margin-bottom: 2px;";
+                let valueSpan = document.createElement("div");
+                valueSpan.textContent = value;
+                valueSpan.style.cssText = "font-size: 14.5px; color: var(--text-main); font-weight: 600;";
+                row.appendChild(labelSpan);
+                row.appendChild(valueSpan);
+                body.appendChild(row);
+            };
+
+            addRow("ふりがな", station.kana);
+            if (station.subName) addRow("副駅名", station.subName);
+            addRow("都道府県", station.pref);
+            addRow("鉄道会社", station.company);
+            addRow("路線", station.line);
+            addRow("備考", station.note);
+
+            if (hasValidCoords(station)) {
+                addRow("座標（緯度・経度）", `${station.lat}, ${station.lng}`);
+
+                let mapWrap = document.createElement("div");
+                mapWrap.style.cssText = "margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);";
+
+                let delta = 0.01; // 地図の表示範囲（度）
+                let bbox = `${station.lng - delta},${station.lat - delta},${station.lng + delta},${station.lat + delta}`;
+                let iframe = document.createElement("iframe");
+                iframe.style.cssText = "width: 100%; height: 220px; border: 0; display: block;";
+                iframe.loading = "lazy";
+                iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${station.lat},${station.lng}`;
+                mapWrap.appendChild(iframe);
+                body.appendChild(mapWrap);
+
+                let mapLink = document.createElement("a");
+                mapLink.href = `https://www.openstreetmap.org/?mlat=${station.lat}&mlon=${station.lng}#map=16/${station.lat}/${station.lng}`;
+                mapLink.target = "_blank";
+                mapLink.rel = "noopener noreferrer";
+                mapLink.textContent = "🗺️ 大きな地図で見る";
+                mapLink.style.cssText = "display: inline-block; margin-top: 8px; font-size: 12.5px; color: var(--primary-dark); text-decoration: underline;";
+                body.appendChild(mapLink);
+            } else {
+                let noCoords = document.createElement("div");
+                noCoords.textContent = "📍 この駅はまだ緯度経度が登録されていないため、地図は表示できません。";
+                noCoords.style.cssText = "margin-top: 8px; font-size: 12.5px; color: var(--text-muted);";
+                body.appendChild(noCoords);
+            }
+
+            document.getElementById("stationInfoModal").classList.add("active");
+        }
+
+        function closeStationInfoModal(e) {
+            const modal = document.getElementById("stationInfoModal");
             modal.classList.remove("active");
         }
 
@@ -4060,12 +4186,18 @@
                 delBtn.style.fontSize = "11px";
                 delBtn.textContent = "削除";
                 delBtn.onclick = () => { 
+                    if (!confirm(`「${p.name}」をメンバーから削除しますか？`)) return;
                     gameParticipants.splice(idx, 1); 
                     recalculateTeamScores();
                     renderParticipants(); 
                     updateDistPlayersDropdown();
                     saveGameStateToStorage();
                 };
+                
+                rightDiv.appendChild(minusBtn);
+                rightDiv.appendChild(scoreInput);
+                rightDiv.appendChild(plusBtn);
+                rightDiv.appendChild(delBtn);
                 
                 rightDiv.appendChild(minusBtn);
                 rightDiv.appendChild(scoreInput);
@@ -4088,7 +4220,7 @@
         function copyLastOdai() {
             if (!lastOdaiText) { alert("まだお題を引いていません！"); return; }
             
-            // 📍 距離企画用のお題コピー対応 (ご要望のフォーマットで最新結果を出力)
+            // 📍 距離企画用のお題・詳細結果コピー対応 (新出力テキストフォーマットに完全準拠)
             if (gameCategory === "distance") {
                 let text = `お題\n${lastOdaiText}\n\n`;
                 let lastResult = gameHistory.length > 0 ? gameHistory[gameHistory.length - 1] : null;
@@ -4097,21 +4229,14 @@
                     let ranked = lastResult.results.filter(r => r.isRankedIn);
                     
                     if (ranked.length > 0) {
-                        let rankGroups = {};
-                        ranked.forEach(r => {
-                            if (!rankGroups[r.rank]) rankGroups[r.rank] = { points: r.points, players: [] };
-                            rankGroups[r.rank].players.push(r);
-                        });
+                        ranked.forEach(p => {
+                            let suffixTag = "";
+                            if (p.isPitari) suffixTag = "　ピタリ";
+                            else if (p.type !== "普通") suffixTag = `　${p.type}`;
 
-                        Object.keys(rankGroups).sort((a,b) => a-b).forEach(rank => {
-                            let group = rankGroups[rank];
-                            text += `${rank}位　${group.points}点\n`;
-                            
-                            group.players.forEach(p => {
-                                text += `メンバー　${p.player}\n`;
-                                let prefix = p.type === "普通" ? "" : `${p.type}　`;
-                                text += `　${prefix}${p.stationName}${p.isPitari ? ' (ピタリ！)' : ''}\n`;
-                            });
+                            text += `${p.rank}位　${p.player}${suffixTag}\n`;
+                            text += `　${p.points}点　${p.stationName}\n`;
+                            text += `　　　　（${p.distance}km）\n`;
                         });
                     } else {
                         text += "得点対象者なし\n";
@@ -4119,7 +4244,7 @@
                 }
                 
                 navigator.clipboard.writeText(text.trim()).then(() => {
-                    alert("お題と結果をコピーしました！");
+                    alert("お題と最新結果を綺麗なフォーマットでコピーしました！");
                 }).catch(() => { alert("コピーに失敗しました。"); });
                 return;
             }
@@ -4212,11 +4337,15 @@
                 distRankLimitInput: document.getElementById("distRankLimitInput").value,
                 distCustomRulesInput: document.getElementById("distCustomRulesInput").value,
                 distTaishoCount: document.getElementById("distTaishoCountInput").value,
-                distTaishoPoints: document.getElementById("distTaishoPointsInput").value,
+                distTaishoMultiplier: document.getElementById("distTaishoMultiplierInput").value,
                 distChujoCount: document.getElementById("distChujoCountInput").value,
-                distChujoPoints: document.getElementById("distChujoPointsInput").value,
+                distChujoMultiplier: document.getElementById("distChujoMultiplierInput").value,
                 distFutsuCount: document.getElementById("distFutsuCountInput").value,
-                distFutsuPoints: document.getElementById("distFutsuPointsInput").value,
+                distRank1Points: document.getElementById("distRank1PointsInput").value,
+                distRank2Points: document.getElementById("distRank2PointsInput").value,
+                distRank3Points: document.getElementById("distRank3PointsInput").value,
+                distRank4Points: document.getElementById("distRank4PointsInput").value,
+                distRank5Points: document.getElementById("distRank5PointsInput").value,
                 distPitariMultiplier: document.getElementById("distPitariMultiplierInput").value,
                 
                 gameOdaisDisplayHtml: document.getElementById("gameOdaisDisplay").innerHTML
@@ -4254,11 +4383,15 @@
                 if(state.distRankLimitInput) document.getElementById("distRankLimitInput").value = state.distRankLimitInput;
                 if(state.distCustomRulesInput) document.getElementById("distCustomRulesInput").value = state.distCustomRulesInput;
                 if(state.distTaishoCount) document.getElementById("distTaishoCountInput").value = state.distTaishoCount;
-                if(state.distTaishoPoints) document.getElementById("distTaishoPointsInput").value = state.distTaishoPoints;
+                if(state.distTaishoMultiplier) document.getElementById("distTaishoMultiplierInput").value = state.distTaishoMultiplier;
                 if(state.distChujoCount) document.getElementById("distChujoCountInput").value = state.distChujoCount;
-                if(state.distChujoPoints) document.getElementById("distChujoPointsInput").value = state.distChujoPoints;
+                if(state.distChujoMultiplier) document.getElementById("distChujoMultiplierInput").value = state.distChujoMultiplier;
                 if(state.distFutsuCount) document.getElementById("distFutsuCountInput").value = state.distFutsuCount;
-                if(state.distFutsuPoints) document.getElementById("distFutsuPointsInput").value = state.distFutsuPoints;
+                if(state.distRank1Points) document.getElementById("distRank1PointsInput").value = state.distRank1Points;
+                if(state.distRank2Points) document.getElementById("distRank2PointsInput").value = state.distRank2Points;
+                if(state.distRank3Points) document.getElementById("distRank3PointsInput").value = state.distRank3Points;
+                if(state.distRank4Points) document.getElementById("distRank4PointsInput").value = state.distRank4Points;
+                if(state.distRank5Points) document.getElementById("distRank5PointsInput").value = state.distRank5Points;
                 if(state.distPitariMultiplier) document.getElementById("distPitariMultiplierInput").value = state.distPitariMultiplier;
                 
                 if(state.gameOdaisDisplayHtml) document.getElementById("gameOdaisDisplay").innerHTML = state.gameOdaisDisplayHtml;
@@ -4321,7 +4454,7 @@
             } else if (lastItem.category === "distance") {
                 displayLabel = `📍お題: ${lastItem.odai}`;
             } else {
-                displayLabel = `「${lastItem.char}」`;
+                displayLabel = `「${lastItem.char}»`;
             }
 
             if (confirm(`最後に登録された「${displayLabel}」を削除しますか？`)) {
@@ -4366,11 +4499,15 @@
                 distRankLimit: document.getElementById("distRankLimitInput").value,
                 distCustomRules: document.getElementById("distCustomRulesInput").value,
                 distTaishoCount: document.getElementById("distTaishoCountInput").value,
-                distTaishoPoints: document.getElementById("distTaishoPointsInput").value,
+                distTaishoMultiplier: document.getElementById("distTaishoMultiplierInput").value,
                 distChujoCount: document.getElementById("distChujoCountInput").value,
-                distChujoPoints: document.getElementById("distChujoPointsInput").value,
+                distChujoMultiplier: document.getElementById("distChujoMultiplierInput").value,
                 distFutsuCount: document.getElementById("distFutsuCountInput").value,
-                distFutsuPoints: document.getElementById("distFutsuPointsInput").value,
+                distRank1Points: document.getElementById("distRank1PointsInput").value,
+                distRank2Points: document.getElementById("distRank2PointsInput").value,
+                distRank3Points: document.getElementById("distRank3PointsInput").value,
+                distRank4Points: document.getElementById("distRank4PointsInput").value,
+                distRank5Points: document.getElementById("distRank5PointsInput").value,
                 distPitariMultiplier: document.getElementById("distPitariMultiplierInput").value
             };
 
@@ -4444,11 +4581,15 @@
                 if(decoded.distRankLimit) document.getElementById("distRankLimitInput").value = decoded.distRankLimit;
                 if(decoded.distCustomRules) document.getElementById("distCustomRulesInput").value = decoded.distCustomRules;
                 if(decoded.distTaishoCount) document.getElementById("distTaishoCountInput").value = decoded.distTaishoCount;
-                if(decoded.distTaishoPoints) document.getElementById("distTaishoPointsInput").value = decoded.distTaishoPoints;
+                if(decoded.distTaishoMultiplier) document.getElementById("distTaishoMultiplierInput").value = decoded.distTaishoMultiplier;
                 if(decoded.distChujoCount) document.getElementById("distChujoCountInput").value = decoded.distChujoCount;
-                if(decoded.distChujoPoints) document.getElementById("distChujoPointsInput").value = decoded.distChujoPoints;
+                if(decoded.distChujoMultiplier) document.getElementById("distChujoMultiplierInput").value = decoded.distChujoMultiplier;
                 if(decoded.distFutsuCount) document.getElementById("distFutsuCountInput").value = decoded.distFutsuCount;
-                if(decoded.distFutsuPoints) document.getElementById("distFutsuPointsInput").value = decoded.distFutsuPoints;
+                if(decoded.distRank1Points) document.getElementById("distRank1PointsInput").value = decoded.distRank1Points;
+                if(decoded.distRank2Points) document.getElementById("distRank2PointsInput").value = decoded.distRank2Points;
+                if(decoded.distRank3Points) document.getElementById("distRank3PointsInput").value = decoded.distRank3Points;
+                if(decoded.distRank4Points) document.getElementById("distRank4PointsInput").value = decoded.distRank4Points;
+                if(decoded.distRank5Points) document.getElementById("distRank5PointsInput").value = decoded.distRank5Points;
                 if(decoded.distPitariMultiplier) document.getElementById("distPitariMultiplierInput").value = decoded.distPitariMultiplier;
                 
                 let displayEl = document.getElementById("gameOdaisDisplay");
