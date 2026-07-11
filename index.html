@@ -571,6 +571,7 @@
 
         .gojuon-table-wrap {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             margin-top: 5px;
         }
         table.gojuon-table {
@@ -732,6 +733,7 @@
             border-radius: 10px;
             max-height: 220px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             font-size: 13px;
             font-family: monospace;
             white-space: pre-line;
@@ -774,6 +776,7 @@
             border-radius: 12px;
             max-height: 200px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             z-index: 2000;
             box-shadow: var(--card-shadow);
         }
@@ -819,6 +822,7 @@
             max-height: 85vh;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             transform: scale(0.9);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -1063,9 +1067,9 @@
         <div id="pageGame" class="page-content">
             <!-- 企画カテゴリ切り替えボタン (3つに拡張) -->
             <div style="display: flex; gap: 6px; margin-bottom: 15px;">
-                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">文字企画</button>
-                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">しりとり</button>
-                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">距離企画</button>
+                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">🔤 文字企画</button>
+                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">🔄 しりとり</button>
+                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">📍 距離企画</button>
             </div>
 
             <!-- 文字企画設定 -->
@@ -1357,7 +1361,8 @@
                     <input type="text" id="customSub" placeholder="副駅名">
                     <input type="text" id="customNote" placeholder="備考（任意）">
                 </div>
-                <button onclick="registerCustomStation()" class="action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; margin-top: 8px; width: 100%;">この駅をデータベースに登録</button>
+                <button id="customStationSubmitBtn" onclick="registerCustomStation()" class="action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; margin-top: 8px; width: 100%;">この駅をデータベースに登録</button>
+                <button id="customStationCancelEditBtn" onclick="cancelEditCustomStation()" class="action-btn" style="display:none; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); margin-top: 8px; width: 100%;">編集をキャンセル</button>
 
                 <details style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
                     <summary style="color: var(--text-muted); font-size: 12.5px;">登録済みの独自カスタム駅</summary>
@@ -1440,7 +1445,7 @@
     <div id="stationInfoModal" class="modal-overlay" onclick="closeStationInfoModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <span id="stationInfoTitle">駅情報</span>
+                <span id="stationInfoTitle">🚉 駅情報</span>
                 <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeStationInfoModal(null)">&times;</button>
             </div>
             <div id="stationInfoBody" class="modal-body"></div>
@@ -1619,6 +1624,33 @@
         };
         const DAKUTEN_CHAR_SET = new Set([...Object.values(DAKUON_MAP), ...Object.values(HANDAKUON_MAP)]);
 
+        // 🌟 ふりがなに日本語以外（アルファベット・ハングル等）が入っていても、
+        // それぞれの文字体系ごとに正しい順番（ABC、ㄱㄴㄷ…）になるようにする
+        function detectKanaScriptGroup(str) {
+            if (!str) return 3;
+            let code = str.codePointAt(0);
+            if (
+                (code >= 0x3040 && code <= 0x30FF) || // ひらがな・カタカナ
+                (code >= 0x4E00 && code <= 0x9FFF) || // 漢字
+                (code >= 0x3400 && code <= 0x4DBF)    // 漢字拡張A
+            ) return 0;
+            if (/[A-Za-z]/.test(str.charAt(0))) return 1; // ラテンアルファベット
+            if (code >= 0xAC00 && code <= 0xD7A3) return 2; // ハングル（音節）
+            return 3; // その他
+        }
+
+        function compareKanaMultiScript(kanaA, kanaB) {
+            let a = kanaA || "";
+            let b = kanaB || "";
+            let groupA = detectKanaScriptGroup(a);
+            let groupB = detectKanaScriptGroup(b);
+            if (groupA !== groupB) return groupA - groupB;
+
+            if (groupA === 1) return a.localeCompare(b, 'en', { sensitivity: 'base' }); // A→Z
+            if (groupA === 2) return a.localeCompare(b, 'ko'); // ㄱ→ㅎ
+            return a.localeCompare(b, 'ja'); // 五十音
+        }
+
         function normalizeToGojuon(char) {
             if (!char) return null;
             if (SMALL_KANA_MAP[char]) return SMALL_KANA_MAP[char];
@@ -1722,14 +1754,27 @@
             return list.filter(n => !variants.includes(n));
         }
 
-        // 🌟 表記ゆれ（保存順の違い）に関わらず、副駅名の個人設定を探す
-        function getSubNameOverride(overrides, s) {
-            if (!overrides) return null;
+        // 🌟 副駅名の個人設定を解決する（"__HIDDEN__" は「共通の副駅名があっても表示しない」の明示的な指定）
+        const SUBNAME_HIDDEN_SENTINEL = "__HIDDEN__";
+        function resolveSubNameOverride(overrides, s) {
+            if (!overrides) return { hasOverride: false, hidden: false, value: null };
             let variants = stationFullNameVariants(s);
             for (let i = 0; i < variants.length; i++) {
-                if (overrides[sanitizeKey(variants[i])]) return overrides[sanitizeKey(variants[i])];
+                let key = sanitizeKey(variants[i]);
+                if (overrides[key] !== undefined) {
+                    if (overrides[key] === SUBNAME_HIDDEN_SENTINEL) {
+                        return { hasOverride: true, hidden: true, value: "" };
+                    }
+                    return { hasOverride: true, hidden: false, value: overrides[key] };
+                }
             }
-            return null;
+            return { hasOverride: false, hidden: false, value: null };
+        }
+
+        // 🌟 表記ゆれ（保存順の違い）に関わらず、副駅名の個人設定を探す
+        function getSubNameOverride(overrides, s) {
+            let resolved = resolveSubNameOverride(overrides, s);
+            return resolved.hidden ? null : resolved.value;
         }
 
         // ニックネーム取得
@@ -2103,8 +2148,10 @@
         function refreshCombinedStations() {
             let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? allUserData[currentUser].customStations : [];
             combinedStationsList = allStations.concat(myCustoms);
-            combinedStationsList.sort((a, b) => a.kana.localeCompare(b.kana, 'ja'));
+            combinedStationsList.sort((a, b) => compareKanaMultiScript(a.kana, b.kana));
         }
+
+        let editingCustomStationIndex = null;
 
         function registerCustomStation() {
             let pref = document.getElementById("customPref").value.trim();
@@ -2121,6 +2168,56 @@
             }
 
             let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
+
+            // 🌟 編集モード：既存のカスタム駅の情報を更新する
+            if (editingCustomStationIndex !== null) {
+                let oldStation = myCustoms[editingCustomStationIndex];
+                if (!oldStation) {
+                    alert("編集対象が見つかりませんでした。");
+                    cancelEditCustomStation();
+                    return;
+                }
+
+                let dupExists = myCustoms.some((s, i) => i !== editingCustomStationIndex && s.name === name && s.company === company) ||
+                                 allStations.some(s => s.name === name && s.company === company);
+                if (dupExists) {
+                    alert("その駅名・鉄道会社の組み合わせはすでに登録されています！");
+                    return;
+                }
+
+                let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
+
+                // マイ駅・副駅名の個人設定に、実際に保存されている表記（新旧いずれか）を特定して引き継ぐ
+                let myOwnStations = [...getOwnStationsArray(currentUser)];
+                let oldVariants = stationFullNameVariants(oldStation);
+                let matchedOldName = myOwnStations.find(n => oldVariants.includes(n));
+
+                myCustoms[editingCustomStationIndex] = newStation;
+                let updates = { customStations: myCustoms };
+
+                if (matchedOldName) {
+                    let newFullName = makeStationFullName(newStation);
+                    if (matchedOldName !== newFullName) {
+                        updates.myOwnStations = myOwnStations.map(n => n === matchedOldName ? newFullName : n);
+
+                        let overrides = (allUserData[currentUser] && allUserData[currentUser].subNameOverrides) ? { ...allUserData[currentUser].subNameOverrides } : {};
+                        let oldKey = sanitizeKey(matchedOldName);
+                        let newKey = sanitizeKey(newFullName);
+                        if (overrides[oldKey] !== undefined) {
+                            overrides[newKey] = overrides[oldKey];
+                            delete overrides[oldKey];
+                            updates.subNameOverrides = overrides;
+                        }
+                    }
+                }
+
+                database.ref("users/" + currentUser).update(updates).then(() => {
+                    alert("「" + name + "」の情報を更新しました！");
+                    cancelEditCustomStation();
+                    renderMyCustomStations();
+                });
+                return;
+            }
 
             let exists = myCustoms.some(s => s.name === name && s.company === company) ||
                          allStations.some(s => s.name === name && s.company === company);
@@ -2154,6 +2251,40 @@
             });
         }
 
+        function startEditCustomStation(idx) {
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? allUserData[currentUser].customStations : [];
+            let target = myCustoms[idx];
+            if (!target) return;
+
+            editingCustomStationIndex = idx;
+
+            document.getElementById("customPref").value = target.pref || "";
+            document.getElementById("customCompany").value = target.company || "";
+            document.getElementById("customLine").value = target.line || "";
+            document.getElementById("customName").value = target.name || "";
+            document.getElementById("customKana").value = target.kana || "";
+            document.getElementById("customSub").value = target.subName || "";
+            document.getElementById("customNote").value = target.note || "";
+
+            document.getElementById("customStationSubmitBtn").textContent = "この駅の情報を更新する";
+            document.getElementById("customStationCancelEditBtn").style.display = "block";
+
+            document.getElementById("customPref").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        function cancelEditCustomStation() {
+            editingCustomStationIndex = null;
+            document.getElementById("customPref").value = "";
+            document.getElementById("customCompany").value = "";
+            document.getElementById("customLine").value = "";
+            document.getElementById("customName").value = "";
+            document.getElementById("customKana").value = "";
+            document.getElementById("customSub").value = "";
+            document.getElementById("customNote").value = "";
+            document.getElementById("customStationSubmitBtn").textContent = "この駅をデータベースに登録";
+            document.getElementById("customStationCancelEditBtn").style.display = "none";
+        }
+
         function renderMyCustomStations() {
             let listEl = document.getElementById("myCustomStationsList");
             if (!listEl) return;
@@ -2174,11 +2305,22 @@
                 label.textContent = `${s.name}（${s.company}）`;
                 li.appendChild(label);
 
+                let btnGroup = document.createElement("div");
+                btnGroup.style.cssText = "display:flex; gap:6px;";
+
+                let editBtn = document.createElement("button");
+                editBtn.textContent = "編集";
+                editBtn.className = "own-btn";
+                editBtn.onclick = () => startEditCustomStation(idx);
+                btnGroup.appendChild(editBtn);
+
                 let delBtn = document.createElement("button");
                 delBtn.textContent = "削除";
                 delBtn.className = "delete-btn";
                 delBtn.onclick = () => deleteCustomStation(idx);
-                li.appendChild(delBtn);
+                btnGroup.appendChild(delBtn);
+
+                li.appendChild(btnGroup);
 
                 listEl.appendChild(li);
             });
@@ -2235,22 +2377,41 @@
             return data;
         }
 
-        function safeSortOwnList(listData, sortType, companyCounts) {
+        function safeSortOwnList(listData, sortType, companyCounts, prefCounts) {
             if (sortType === "pref") {
+                prefCounts = prefCounts || {};
                 listData.sort((a, b) => {
-                    let diff = getPrefIndex(a.pref) - getPrefIndex(b.pref);
-                    if (diff !== 0) return diff;
-                    return a.kana.localeCompare(b.kana, 'ja');
+                    let idxA = getPrefIndex(a.pref);
+                    let idxB = getPrefIndex(b.pref);
+                    let isForeignA = idxA === 999;
+                    let isForeignB = idxB === 999;
+
+                    if (!isForeignA && !isForeignB) {
+                        // 日本の都道府県同士 → これまで通り地理的な順（北から南）
+                        if (idxA !== idxB) return idxA - idxB;
+                        return compareKanaMultiScript(a.kana, b.kana);
+                    }
+                    if (isForeignA !== isForeignB) {
+                        // 🌟 日本以外の地域は、駅数が一番少ない都道府県よりも必ず後ろに来る
+                        return isForeignA ? 1 : -1;
+                    }
+
+                    // 🌟 日本以外の地域同士は、登録駅数が多い順に並べる
+                    let countA = prefCounts[a.pref] || 0;
+                    let countB = prefCounts[b.pref] || 0;
+                    if (countB !== countA) return countB - countA;
+                    if (a.pref !== b.pref) return a.pref.localeCompare(b.pref, 'ja');
+                    return compareKanaMultiScript(a.kana, b.kana);
                 });
             } else if (sortType === "company") {
                 listData.sort((a, b) => {
                     let countA = companyCounts[a.company] || 0;
                     let countB = companyCounts[b.company] || 0;
                     if (countB !== countA) return countB - countA;
-                    return a.kana.localeCompare(b.kana, 'ja');
+                    return compareKanaMultiScript(a.kana, b.kana);
                 });
             } else {
-                listData.sort((a, b) => a.kana.localeCompare(b.kana, 'ja'));
+                listData.sort((a, b) => compareKanaMultiScript(a.kana, b.kana));
             }
         }
 
@@ -2546,9 +2707,11 @@
                         let label = nickOf(uid);
 
                         let overrides = (allUserData[uid] && allUserData[uid].subNameOverrides) ? allUserData[uid].subNameOverrides : {};
-                        let personalSub = getSubNameOverride(overrides, item);
-                        if (personalSub) {
-                            label += `（${personalSub}）`;
+                        let subInfo = resolveSubNameOverride(overrides, item);
+                        if (subInfo.hidden) {
+                            label += `（副駅名なし）`;
+                        } else if (subInfo.hasOverride) {
+                            label += `（${subInfo.value}）`;
                         } else if (item.subName) {
                             label += `（なし）`;
                         }
@@ -2741,7 +2904,9 @@
                 }
 
                 let overrideKey = sanitizeKey(fullName);
-                let effectiveSubName = (subNameOverrides[overrideKey] !== undefined) ? subNameOverrides[overrideKey] : stationObj.subName;
+                let overrideRaw = subNameOverrides[overrideKey];
+                let subNameHidden = overrideRaw === SUBNAME_HIDDEN_SENTINEL;
+                let effectiveSubName = subNameHidden ? "" : ((overrideRaw !== undefined) ? overrideRaw : stationObj.subName);
 
                 let firstRawChar = stationObj.kana ? stationObj.kana.charAt(0) : "";
                 let lastRawChar = stationObj.kana ? stationObj.kana.slice(-1) : "";
@@ -2757,13 +2922,13 @@
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
-                listData.push({ ...stationObj, subName: effectiveSubName, fullName: fullName });
+                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName });
             });
 
             document.getElementById("ownCount").textContent = listData.length;
 
             let sortType = document.getElementById("myOwnSortSelect").value;
-            safeSortOwnList(listData, sortType, companyCounts);
+            safeSortOwnList(listData, sortType, companyCounts, prefCounts);
 
             globallySortedOwnNames = listData.map(item => item.fullName);
 
@@ -2882,14 +3047,43 @@
 
                     let subEditInput = document.createElement("input");
                     subEditInput.type = "text";
-                    subEditInput.value = item.subName || "";
+                    subEditInput.value = item.subNameHidden ? "" : (item.subName || "");
                     subEditInput.placeholder = "自分用の副駅名（空欄で共通駅名）";
                     subEditInput.style.cssText = "flex:1; padding:6px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
                     subEditInput.onclick = (e) => e.stopPropagation();
-                    subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value);
+                    if (item.subNameHidden) subEditInput.disabled = true;
+                    subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value, false);
                     subEditRow.appendChild(subEditInput);
 
                     infoDiv.appendChild(subEditRow);
+
+                    // 🌟 共通データ側に副駅名がある駅だけ「表示しない」チェックボックスを出す
+                    if (item.officialSubName) {
+                        let hideRow = document.createElement("label");
+                        hideRow.style.cssText = "display:flex; align-items:center; gap:5px; margin-top:6px; font-size:11px; color:var(--text-muted); cursor:pointer;";
+                        hideRow.onclick = (e) => e.stopPropagation();
+
+                        let hideCheckbox = document.createElement("input");
+                        hideCheckbox.type = "checkbox";
+                        hideCheckbox.checked = !!item.subNameHidden;
+                        hideCheckbox.onchange = () => {
+                            if (hideCheckbox.checked) {
+                                subEditInput.value = "";
+                                subEditInput.disabled = true;
+                                updateSubNameOverride(item.fullName, "", true);
+                            } else {
+                                subEditInput.disabled = false;
+                                updateSubNameOverride(item.fullName, subEditInput.value, false);
+                            }
+                        };
+                        hideRow.appendChild(hideCheckbox);
+
+                        let hideText = document.createElement("span");
+                        hideText.textContent = `副駅名を表示しない（共通の副駅名: ${item.officialSubName}）`;
+                        hideRow.appendChild(hideText);
+
+                        infoDiv.appendChild(hideRow);
+                    }
                 }
 
                 infoDiv.style.cursor = "pointer";
@@ -2921,10 +3115,12 @@
             window.scrollTo(0, 0);
         }
 
-        function updateSubNameOverride(fullName, newValue) {
+        function updateSubNameOverride(fullName, newValue, hide) {
             let key = sanitizeKey(fullName);
             let path = "users/" + currentUser + "/subNameOverrides/" + key;
-            if (newValue.trim() === "") {
+            if (hide) {
+                database.ref(path).set(SUBNAME_HIDDEN_SENTINEL);
+            } else if (newValue.trim() === "") {
                 database.ref(path).remove();
             } else {
                 database.ref(path).set(newValue.trim());
@@ -3211,15 +3407,15 @@
                     
                     let modeTitle = "";
                     if (type === "rand") {
-                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "駅名乱数モード";
                         lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
                     } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "常用漢字モード";
                         lastOdaiText = `「${finalChar}」`;
                     } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "全駅文字モード";
                         lastOdaiText = `「${finalChar}」`;
                     }
@@ -3289,7 +3485,7 @@
                     let fullText = buildShiritoriOdaiText(historyItem);
                     let sourceLines = (charSources || []).map(p => `${p.station} ${p.index}文字目 → 「${p.char}」`);
 
-                    let displayHtml = `<span style="font-size:14px; opacity:0.7;">${escapeHtml(modeTitle)}</span><br>`;
+                    let displayHtml = `<span style="font-size:14px; opacity:0.7;">🏮 ${escapeHtml(modeTitle)}</span><br>`;
                     if (sourceLines.length > 0) {
                         displayHtml += `<div style="font-size:12.5px; opacity:0.85; margin: 4px 0; line-height:1.5;">${sourceLines.map(l => escapeHtml(l)).join("<br>")}</div>`;
                     }
@@ -4039,7 +4235,17 @@
 
             // Leafletはコンテナが実際に画面に表示された後でないと正しく初期化できないため少し待つ
             setTimeout(() => {
-                distanceResultMapInstance = L.map("distanceResultMap", { scrollWheelZoom: false });
+                // 🌟 スマホでスワイプした指がこの小さな要約マップの上を通ると、ページではなく
+                // 地図側にスクロール（パン）が奪われてしまうため、タッチでの操作は無効化する
+                // （拡大縮小ボタン・ピンのタップは引き続き使えます）
+                distanceResultMapInstance = L.map("distanceResultMap", {
+                    scrollWheelZoom: false,
+                    dragging: false,
+                    touchZoom: false,
+                    doubleClickZoom: false,
+                    boxZoom: false,
+                    keyboard: false
+                });
                 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                     attribution: "&copy; OpenStreetMap contributors",
                     maxZoom: 18
@@ -4103,7 +4309,7 @@
         function openStationInfoModal(station) {
             if (!station) return;
 
-            document.getElementById("stationInfoTitle").textContent = `${station.name}`;
+            document.getElementById("stationInfoTitle").textContent = `🚉 ${station.name}`;
 
             let body = document.getElementById("stationInfoBody");
             body.innerHTML = "";
@@ -4134,7 +4340,7 @@
                 addRow("座標（緯度・経度）", `${station.lat}, ${station.lng}`);
 
                 let mapWrap = document.createElement("div");
-                mapWrap.style.cssText = "margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);";
+                mapWrap.style.cssText = "position: relative; margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);";
 
                 let delta = 0.01; // 地図の表示範囲（度）
                 let bbox = `${station.lng - delta},${station.lat - delta},${station.lng + delta},${station.lat + delta}`;
@@ -4143,6 +4349,15 @@
                 iframe.loading = "lazy";
                 iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${station.lat},${station.lng}`;
                 mapWrap.appendChild(iframe);
+
+                // 🌟 スマホでスクロール中に地図の上を指が通ると、地図側にスワイプを取られて
+                // ページがスクロールできなくなることがあるため、タップして操作を有効化する方式にする
+                let tapOverlay = document.createElement("div");
+                tapOverlay.textContent = "👆 タップして地図を操作";
+                tapOverlay.style.cssText = "position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); color:#fff; font-size:13px; font-weight:bold; cursor:pointer; text-shadow:0 1px 3px rgba(0,0,0,0.5);";
+                tapOverlay.onclick = () => tapOverlay.remove();
+                mapWrap.appendChild(tapOverlay);
+
                 body.appendChild(mapWrap);
 
                 let mapLink = document.createElement("a");
