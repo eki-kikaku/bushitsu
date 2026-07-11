@@ -189,6 +189,33 @@
             box-shadow: 0 12px 35px rgba(0, 164, 151, 0.08);
         }
 
+        /* 🌟 企画のルール設定を折りたためるようにする */
+        .rule-settings-toggle {
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary-dark);
+            font-size: 14px;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+        .rule-settings-toggle::-webkit-details-marker { display: none; }
+        .rule-settings-toggle::after {
+            content: "▾";
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+            margin-left: 8px;
+        }
+        details.rule-settings[open] > .rule-settings-toggle::after {
+            transform: rotate(180deg);
+        }
+        .rule-settings-body {
+            margin-top: 12px;
+        }
+
         /* Fade-in-up アニメーション */
         .page-content {
             display: none;
@@ -1036,14 +1063,16 @@
         <div id="pageGame" class="page-content">
             <!-- 企画カテゴリ切り替えボタン (3つに拡張) -->
             <div style="display: flex; gap: 6px; margin-bottom: 15px;">
-                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">🔤 文字企画</button>
-                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">🔄 しりとり</button>
-                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">📍 距離企画</button>
+                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">文字企画</button>
+                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">しりとり</button>
+                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">距離企画</button>
             </div>
 
             <!-- 文字企画設定 -->
             <div id="charGameSettings" class="bento-card">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ 文字企画ルール設定</p>
+                <details class="rule-settings" open>
+                <summary class="rule-settings-toggle">⚙️ 文字企画ルール設定</summary>
+                <div class="rule-settings-body">
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">モード</label>
@@ -1072,11 +1101,15 @@
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
                     <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
                 </div>
+                </div>
+                </details>
             </div>
 
             <!-- しりとり設定 -->
             <div id="shiritoriGameSettings" class="bento-card hidden">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ しりとりルール設定</p>
+                <details class="rule-settings" open>
+                <summary class="rule-settings-toggle">⚙️ しりとりルール設定</summary>
+                <div class="rule-settings-body">
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                     <div>
                         <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">モード</label>
@@ -1108,11 +1141,15 @@
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
                     <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：マイ駅でしりとりを繋げてね！"></textarea>
                 </div>
+                </div>
+                </details>
             </div>
 
             <!-- 📍 距離企画設定 -->
             <div id="distanceGameSettings" class="bento-card hidden">
-                <p style="margin: 0 0 8px 0; font-weight: bold; color: var(--primary-dark); font-size: 14px;">⚙️ 距離企画ルール設定</p>
+                <details class="rule-settings" open>
+                <summary class="rule-settings-toggle">⚙️ 距離企画ルール設定</summary>
+                <div class="rule-settings-body">
                 <p style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted);">「モード」はお題駅の抽選範囲だけでなく、メンバーがピンを置ける駅の範囲にも適用されます（マイ駅のみ：参加枠名と同じニックネームのメンバーの、マイ駅からしかピンを置けません）。</p>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
                     <div>
@@ -1192,6 +1229,8 @@
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
                     <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：お題に一番近い駅を指定してね！同名駅ピタリは得点3倍！"></textarea>
                 </div>
+                </div>
+                </details>
             </div>
 
             <div id="gameOdaisDisplay" class="game-display bento-card">
@@ -1401,7 +1440,7 @@
     <div id="stationInfoModal" class="modal-overlay" onclick="closeStationInfoModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <span id="stationInfoTitle">🚉 駅情報</span>
+                <span id="stationInfoTitle">駅情報</span>
                 <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeStationInfoModal(null)">&times;</button>
             </div>
             <div id="stationInfoBody" class="modal-body"></div>
@@ -3055,40 +3094,55 @@
             let length = parseInt(document.getElementById("shiriLengthOption").value, 10) || 2;
             let includeSub = document.getElementById("gameSubOption").value === "yes";
 
-            let charsPool = [];
+            let finalChars = [];
+            let charSources = null; // rand モードのみ、どの駅の何文字目から取ったかを記録
+
             if (mode === "rand") {
                 let namePool = [];
                 combinedStationsList.forEach(s => {
-                    if (s.name) namePool.push(s.name);
-                    if (includeSub && s.subName) namePool.push(s.subName);
+                    if (s.name) namePool.push({ mainName: s.name, displayName: `${s.name}（${s.company}・${s.pref}）` });
+                    if (includeSub && s.subName) namePool.push({ mainName: s.subName, displayName: `${s.subName}（${s.company}・${s.pref}・副駅名）` });
                 });
                 if (namePool.length === 0) { alert("対象データがありません。"); return; }
-                let charSet = new Set();
-                namePool.forEach(name => {
-                    for (let c of name) {
-                        if (c.trim() !== "") charSet.add(c);
-                    }
-                });
-                charsPool = Array.from(charSet);
-            } else if (mode === "jouyo") {
-                charsPool = cachedKanjiChars;
+
+                // 🌟 重複しない文字を length 個集めつつ、どの駅の何文字目から取ったかも記録する
+                let picks = [];
+                let usedChars = new Set();
+                let attempts = 0;
+                let maxAttempts = 5000;
+                while (picks.length < length && attempts < maxAttempts) {
+                    attempts++;
+                    let target = namePool[Math.floor(Math.random() * namePool.length)];
+                    let idx = Math.floor(Math.random() * target.mainName.length) + 1;
+                    let ch = target.mainName.charAt(idx - 1);
+                    if (ch.trim() === "" || usedChars.has(ch)) continue;
+                    usedChars.add(ch);
+                    picks.push({ char: ch, station: target.displayName, index: idx });
+                }
+
+                if (picks.length < length) {
+                    alert("必要な文字数を集められませんでした（対象データが少なすぎる可能性があります）。");
+                    return;
+                }
+
+                finalChars = picks.map(p => p.char);
+                charSources = picks;
             } else {
-                charsPool = cachedAllChars;
+                let charsPool = (mode === "jouyo") ? cachedKanjiChars : cachedAllChars;
+
+                if (charsPool.length < length) {
+                    alert("文字数が足りません。");
+                    return;
+                }
+
+                let poolCopy = [...charsPool];
+                for (let i = 0; i < length; i++) {
+                    let idx = Math.floor(Math.random() * poolCopy.length);
+                    finalChars.push(poolCopy.splice(idx, 1)[0]);
+                }
             }
 
-            if (charsPool.length < length) {
-                alert("文字数が足りません。");
-                return;
-            }
-
-            let finalChars = [];
-            let poolCopy = [...charsPool];
-            for (let i = 0; i < length; i++) {
-                let idx = Math.floor(Math.random() * poolCopy.length);
-                finalChars.push(poolCopy.splice(idx, 1)[0]);
-            }
-
-            startShiritoriSlotAnimation(mode, finalChars, length);
+            startShiritoriSlotAnimation(mode, finalChars, length, charSources);
         }
 
         // 🌟 📍 距離企画用お題駅の抽選
@@ -3157,15 +3211,15 @@
                     
                     let modeTitle = "";
                     if (type === "rand") {
-                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">🎲 ${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:15px; font-weight:bold;">${escapeHtml(finalStation)}</span><br><b style="font-size:30px; color:var(--primary-dark);">${finalIndex}文字目 → 「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "駅名乱数モード";
                         lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
                     } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "常用漢字モード";
                         lastOdaiText = `「${finalChar}」`;
                     } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "全駅文字モード";
                         lastOdaiText = `「${finalChar}」`;
                     }
@@ -3181,7 +3235,7 @@
         }
 
         // 🌟 しりとり用スロットアニメーション
-        function startShiritoriSlotAnimation(mode, finalChars, length) {
+        function startShiritoriSlotAnimation(mode, finalChars, length, charSources) {
             let count = 0;
             let displayEl = document.getElementById("gameOdaisDisplay");
             if (slotInterval) clearInterval(slotInterval);
@@ -3207,22 +3261,44 @@
                     clearInterval(slotInterval);
                     slotInterval = null;
                     
-                    let displayString = finalChars.map(c => `「${c}」`).join(" → ");
+                    let charsLine = finalChars.map(c => `「${c}」`).join(" → ");
+
                     let modeTitle = "";
-                    if (mode === "rand") modeTitle = "しりとり (駅名乱数)";
-                    else if (mode === "jouyo") modeTitle = "しりとり (常用漢字)";
-                    else modeTitle = "しりとり (全駅文字)";
-                    
-                    displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 ${escapeHtml(modeTitle)}</span><br><b style="font-size:26px; color:var(--primary);">${escapeHtml(displayString)}</b>`;
-                    
-                    lastOdaiText = finalChars.map(c => `「${c}」`).join(" → ");
-                    
-                    gameHistory.push({
+                    let historyLabel = "";
+
+                    if (mode === "rand") {
+                        modeTitle = "駅名乱数モード";
+                        historyLabel = "しりとり (駅名乱数)";
+                    } else if (mode === "jouyo") {
+                        modeTitle = "常用漢字モード";
+                        historyLabel = "しりとり (常用漢字)";
+                    } else {
+                        modeTitle = "全駅文字モード";
+                        historyLabel = "しりとり (全駅文字)";
+                    }
+
+                    let historyItem = {
                         category: "shiritori",
-                        mode: modeTitle,
+                        mode: historyLabel,
                         chars: finalChars,
+                        charSources: charSources || null,
                         wonTeams: []
-                    });
+                    };
+
+                    // 🌟 画面表示・お題コピーともに「モード名 → （駅名乱数なら各文字の出典） → 文字の連なり」の順で統一
+                    let fullText = buildShiritoriOdaiText(historyItem);
+                    let sourceLines = (charSources || []).map(p => `${p.station} ${p.index}文字目 → 「${p.char}」`);
+
+                    let displayHtml = `<span style="font-size:14px; opacity:0.7;">${escapeHtml(modeTitle)}</span><br>`;
+                    if (sourceLines.length > 0) {
+                        displayHtml += `<div style="font-size:12.5px; opacity:0.85; margin: 4px 0; line-height:1.5;">${sourceLines.map(l => escapeHtml(l)).join("<br>")}</div>`;
+                    }
+                    displayHtml += `<b style="font-size:26px; color:var(--primary);">${escapeHtml(charsLine)}</b>`;
+                    displayEl.innerHTML = displayHtml;
+                    
+                    lastOdaiText = fullText;
+                    
+                    gameHistory.push(historyItem);
                     gameTurn++;
                     document.getElementById("gameTurnSpan").textContent = gameTurn;
                     
@@ -3855,6 +3931,20 @@
         // 1位　メンバー名　ピタリ
         // 　5点　駅名（都道府県・鉄道会社）
         // 　　　　（0.32km）
+        // 🌟 しりとりお題のテキストを統一フォーマットで生成（モード名 → 各文字の出典（駅名乱数のみ）→ 文字の連なり）
+        function buildShiritoriOdaiText(h) {
+            let modeTitle = "全駅文字モード";
+            if (h.mode && h.mode.includes("駅名乱数")) modeTitle = "駅名乱数モード";
+            else if (h.mode && h.mode.includes("常用漢字")) modeTitle = "常用漢字モード";
+
+            let sourceLines = [];
+            if (h.charSources && h.charSources.length > 0) {
+                h.charSources.forEach(p => sourceLines.push(`${p.station} ${p.index}文字目 → 「${p.char}」`));
+            }
+            let charsLine = (h.chars || []).map(c => `「${c}」`).join(" → ");
+            return modeTitle + "\n" + (sourceLines.length > 0 ? sourceLines.join("\n") + "\n" : "") + charsLine;
+        }
+
         function buildDistanceResultText(h) {
             let text = `お題\n${h.odai}\n\n`;
             let rankedPins = (h.results || []).filter(r => r.isRankedIn);
@@ -4013,7 +4103,7 @@
         function openStationInfoModal(station) {
             if (!station) return;
 
-            document.getElementById("stationInfoTitle").textContent = `🚉 ${station.name}`;
+            document.getElementById("stationInfoTitle").textContent = `${station.name}`;
 
             let body = document.getElementById("stationInfoBody");
             body.innerHTML = "";
@@ -4646,6 +4736,7 @@
                     char: h.char || null, 
                     odai: h.odai || null,
                     results: h.results || null,
+                    charSources: h.charSources || null,
                     wonTeams: h.wonTeams || [] 
                 })),
                 turnCount: gameTurn,
@@ -4769,7 +4860,7 @@
                     else displayString = `「${lastItem.char}」`;
                     
                     displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">前回の最後のお題</span><br><b style="font-size:26px; color:var(--primary-dark);">${escapeHtml(displayString)}</b>`;
-                    lastOdaiText = isShiri ? lastItem.chars.map(c => `「${c}」`).join(" → ") : (isDist ? lastItem.odai : `「${lastItem.char}」`);
+                    lastOdaiText = isShiri ? buildShiritoriOdaiText(lastItem) : (isDist ? lastItem.odai : `「${lastItem.char}」`);
                 } else {
                     displayEl.innerHTML = `<span style="color:var(--text-muted);">ボタンを押してお題を引いてね！</span>`;
                     lastOdaiText = "";
