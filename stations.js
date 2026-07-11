@@ -234,7 +234,7 @@ const allStations = [
   { name: "朝熊", kana: "あさま", pref: "三重県", company: "近畿日本鉄道", line: "鳥羽線", subName: "", note: "", lat: 34.477195, lng: 136.757357 },
   { name: "阿左美", kana: "あざみ", pref: "群馬県", company: "東武鉄道", line: "桐生線", subName: "", note: "", lat: 36.387116, lng: 139.308726 },
   { name: "あざみ野", kana: "あざみの", pref: "神奈川県", company: "東急電鉄", line: "田園都市線", subName: "", note: "", lat: 35.568645, lng: 139.553462 },
-  { name: "あざみ野", kana: "あざみの", pref: "神奈川県", company: "横浜市交通局", line: "ブルーライン", subName: "", note: "", lat: 35.568645, lng: 139.553462 },
+  { name: "あざみ野", kana: "あざみの", pref: "神奈川県", company: "横浜市交通局", line: "3号線", subName: "", note: "", lat: 35.568645, lng: 139.553462 },
   { name: "浅海井", kana: "あざむい", pref: "大分県", company: "九州旅客鉄道", line: "日豊本線", subName: "", note: "", lat: 33.043539, lng: 131.919236 },
   { name: "浅虫温泉", kana: "あさむしおんせん", pref: "青森県", company: "青い森鉄道", line: "青い森鉄道線", subName: "", note: "", lat: 40.890976, lng: 140.862221 },
   { name: "朝里", kana: "あさり", pref: "北海道", company: "北海道旅客鉄道", line: "函館本線", subName: "", note: "", lat: 43.176868, lng: 141.063923 },
@@ -679,7 +679,7 @@ const allStations = [
   { name: "井関", kana: "いせぎ", pref: "三重県", company: "東海旅客鉄道", line: "名松線", subName: "", note: "", lat: 34.642493, lng: 136.412653 },
   { name: "伊勢崎", kana: "いせさき", pref: "群馬県", company: "東日本旅客鉄道", line: "両毛線", subName: "", note: "", lat: 36.326849, lng: 139.193704 },
   { name: "伊勢崎", kana: "いせさき", pref: "群馬県", company: "東武鉄道", line: "伊勢崎線", subName: "", note: "", lat: 36.326622, lng: 139.194559 },
-  { name: "伊勢佐木長者町", kana: "いせざきちょうじゃまち", pref: "神奈川県", company: "横浜市交通局", line: "ブルーライン", subName: "", note: "", lat: 35.441044, lng: 139.633176 },
+  { name: "伊勢佐木長者町", kana: "いせざきちょうじゃまち", pref: "神奈川県", company: "横浜市交通局", line: "1号線", subName: "", note: "", lat: 35.441044, lng: 139.633176 },
   { name: "伊勢市", kana: "いせし", pref: "三重県", company: "東海旅客鉄道", line: "参宮線", subName: "", note: "", lat: 34.49126, lng: 136.709661 },
   { name: "伊勢市", kana: "いせし", pref: "三重県", company: "近畿日本鉄道", line: "山田線", subName: "", note: "", lat: 34.49126, lng: 136.709661 },
   { name: "伊勢田", kana: "いせだ", pref: "京都府", company: "近畿日本鉄道", line: "京都線", subName: "", note: "", lat: 34.882208, lng: 135.77899 },
@@ -1827,7 +1827,7 @@ const allStations = [
   { name: "乙原", kana: "おとばる", pref: "大分県", company: "ラクテンチ", line: "別府ラクテンチケーブル線", subName: "", note: "", lat: 33.274681, lng: 131.483183 },
   { name: "乙丸", kana: "おとまる", pref: "石川県", company: "北陸鉄道", line: "石川線", subName: "", note: "", lat: 36.511853, lng: 136.617681 },
   { name: "乙女", kana: "おとめ", pref: "長野県", company: "東日本旅客鉄道", line: "小海線", subName: "", note: "", lat: 36.311371, lng: 138.440527 },
-  { name: "踊場", kana: "おどりば", pref: "神奈川県", company: "横浜市交通局", line: "ブルーライン", subName: "", note: "", lat: 35.405922, lng: 139.518058 },
+  { name: "踊場", kana: "おどりば", pref: "神奈川県", company: "横浜市交通局", line: "1号線", subName: "", note: "", lat: 35.405922, lng: 139.518058 },
   { name: "音羽町", kana: "おとわちょう", pref: "静岡県", company: "静岡鉄道", line: "静岡清水線", subName: "", note: "", lat: 34.978387, lng: 138.395775 },
   { name: "尾奈", kana: "おな", pref: "静岡県", company: "天竜浜名湖鉄道", line: "天竜浜名湖線", subName: "", note: "", lat: 34.783958, lng: 137.541755 },
   { name: "女川", kana: "おながわ", pref: "宮城県", company: "東日本旅客鉄道", line: "石巻線", subName: "", note: "", lat: 38.446403, lng: 141.444919 },
@@ -1923,5 +1923,5 @@ const allStations = [
   { name: "御嶽山", kana: "おんたけさん", pref: "東京都", company: "東急電鉄", line: "池上線", subName: "", note: "", lat: 35.585236, lng: 139.682473 },
   { name: "恩智", kana: "おんぢ", pref: "大阪府", company: "近畿日本鉄道", line: "大阪線", subName: "", note: "", lat: 34.609747, lng: 135.626308 },
   { name: "音別", kana: "おんべつ", pref: "北海道", company: "北海道旅客鉄道", line: "根室本線", subName: "", note: "", lat: 42.888997, lng: 143.932442 },
-  { name: "ガーラ湯沢", kana: "がーらゆざわ", pref: "新潟県", company: "東日本旅客鉄道", line: "上越線", subName: "", note: "実質的に上越新幹線の支線", lat: 36.950315, lng: 138.799573 }
+  { name: "ガーラ湯沢", kana: "がーらゆざわ", pref: "新潟県", company: "東日本旅客鉄道", line: "上越線", subName: "", note: "", lat: 36.950315, lng: 138.799573 }
 ];
