@@ -1019,9 +1019,8 @@
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;">
                         改行ごとに駅名を入力してね！<br>
-                        例：梅田（阪急電鉄） / 大久保（東京都）
                     </p>
-                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）&#13;東京"></textarea>
+                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="柏原（大阪府・西日本旅客鉄道）&#13;大宮（埼玉県）&#13;尼崎（阪神電気鉄道）&#13;東京"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; margin-top: 5px;">まとめてマイ駅に登録</button>
                     
                     <div id="bulkResultLog" class="log-box hidden"></div>
@@ -1067,9 +1066,9 @@
         <div id="pageGame" class="page-content">
             <!-- 企画カテゴリ切り替えボタン (3つに拡張) -->
             <div style="display: flex; gap: 6px; margin-bottom: 15px;">
-                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">🔤 文字企画</button>
-                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">🔄 しりとり</button>
-                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">📍 距離企画</button>
+                <button type="button" id="gameCatCharBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px;" onclick="switchGameCategory('character')">文字企画</button>
+                <button type="button" id="gameCatShiriBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('shiritori')">しりとり</button>
+                <button type="button" id="gameCatDistBtn" class="action-btn" style="flex: 1; font-size: 12.5px; padding: 12px 6px; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);" onclick="switchGameCategory('distance')">距離企画</button>
             </div>
 
             <!-- 文字企画設定 -->
@@ -1103,7 +1102,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
+                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください。"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1143,7 +1142,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：マイ駅でしりとりを繋げてね！"></textarea>
+                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください。"></textarea>
                 </div>
                 </div>
                 </details>
