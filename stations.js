@@ -2843,7 +2843,7 @@ const allStations = [
   { name: "木ノ下", kana: "きのした", pref: "長野県", company: "東海旅客鉄道", line: "飯田線", subName: "", note: "", lat: 35.900892, lng: 137.988022 },
   { name: "来宮", kana: "きのみや", pref: "静岡県", company: "東日本旅客鉄道", line: "伊東線", subName: "", note: "", lat: 35.098723, lng: 139.065575 },
   { name: "木ノ本", kana: "きのもと", pref: "滋賀県", company: "西日本旅客鉄道", line: "北陸本線", subName: "", note: "", lat: 35.505933, lng: 136.221706 },
-  { name: "木野山", kana: "きのやま", pref: "広島県", company: "西日本旅客鉄道", line: "伯備線", subName: "", note: "", lat: 34.825682, lng: 133.614374 },
+  { name: "木野山", kana: "きのやま", pref: "岡山県", company: "西日本旅客鉄道", line: "伯備線", subName: "", note: "", lat: 34.825682, lng: 133.614374 },
   { name: "木場", kana: "きば", pref: "東京都", company: "東京地下鉄", line: "東西線", subName: "", note: "", lat: 35.669351, lng: 139.807042 },
   { name: "木花", kana: "きばな", pref: "宮崎県", company: "九州旅客鉄道", line: "日南線", subName: "", note: "", lat: 31.831544, lng: 131.43679 },
   { name: "吉備津", kana: "きびつ", pref: "岡山県", company: "西日本旅客鉄道", line: "吉備線", subName: "", note: "", lat: 34.674491, lng: 133.846201 },
