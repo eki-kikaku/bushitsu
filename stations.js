@@ -2305,7 +2305,7 @@ const allStations = [
   { name: "上川口", kana: "かみかわぐち", pref: "京都府", company: "西日本旅客鉄道", line: "山陰本線", subName: "", note: "", lat: 35.329504, lng: 135.073284 },
   { name: "上川立", kana: "かみかわたち", pref: "広島県", company: "西日本旅客鉄道", line: "芸備線", subName: "", note: "", lat: 34.725373, lng: 132.784873 },
   { name: "上神梅", kana: "かみかんばい", pref: "群馬県", company: "わたらせ渓谷鐵道", line: "わたらせ渓谷線", subName: "", note: "", lat: 36.470053, lng: 139.257696 },
-  { name: "上北沢", kana: "かみきたざわ", pref: "東京都", company: "京王電鉄", line: "井の頭線", subName: "", note: "", lat: 35.668857, lng: 139.62329 },
+  { name: "上北沢", kana: "かみきたざわ", pref: "東京都", company: "京王電鉄", line: "京王線", subName: "", note: "", lat: 35.668857, lng: 139.62329 },
   { name: "上北台", kana: "かみきただい", pref: "東京都", company: "多摩都市モノレール", line: "多摩都市モノレール線", subName: "", note: "", lat: 35.745824, lng: 139.415822 },
   { name: "上北町", kana: "かみきたちょう", pref: "青森県", company: "青い森鉄道", line: "青い森鉄道線", subName: "", note: "", lat: 40.732993, lng: 141.264801 },
   { name: "上熊谷", kana: "かみくまがや", pref: "埼玉県", company: "秩父鉄道", line: "秩父本線", subName: "", note: "", lat: 36.142657, lng: 139.38134 },

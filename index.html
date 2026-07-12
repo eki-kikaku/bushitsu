@@ -1019,8 +1019,9 @@
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;">
                         改行ごとに駅名を入力してね！<br>
+                        例：梅田（阪急電鉄） / 大久保（東京都）
                     </p>
-                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="柏原（大阪府・西日本旅客鉄道）&#13;大宮（埼玉県）&#13;尼崎（阪神電気鉄道）&#13;東京"></textarea>
+                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）&#13;東京"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; margin-top: 5px;">まとめてマイ駅に登録</button>
                     
                     <div id="bulkResultLog" class="log-box hidden"></div>
@@ -1102,7 +1103,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください。"></textarea>
+                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1142,7 +1143,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください。"></textarea>
+                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1230,7 +1231,7 @@
 
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：お題に一番近い駅を指定してね！同名駅ピタリは得点3倍！"></textarea>
+                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1351,6 +1352,7 @@
             <h2>🗂️ データベース未登録駅の追加</h2>
             <div class="bento-card">
                 <p style="margin:0 0 8px 0; font-size:12.5px; color:#e67e22; font-weight:bold;">廃駅や海外の駅を追加できます！</p>
+
                 <div class="custom-station-grid">
                     <input type="text" id="customPref" placeholder="都道府県">
                     <input type="text" id="customCompany" placeholder="鉄道会社">
@@ -1359,6 +1361,8 @@
                     <input type="text" id="customKana" placeholder="ふりがな">
                     <input type="text" id="customSub" placeholder="副駅名">
                     <input type="text" id="customNote" placeholder="備考（任意）">
+                    <input type="text" id="customLat" placeholder="緯度（任意・距離企画で使用）">
+                    <input type="text" id="customLng" placeholder="経度（任意・距離企画で使用）">
                 </div>
                 <button id="customStationSubmitBtn" onclick="registerCustomStation()" class="action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; margin-top: 8px; width: 100%;">この駅をデータベースに登録</button>
                 <button id="customStationCancelEditBtn" onclick="cancelEditCustomStation()" class="action-btn" style="display:none; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); margin-top: 8px; width: 100%;">編集をキャンセル</button>
@@ -1444,12 +1448,38 @@
     <div id="stationInfoModal" class="modal-overlay" onclick="closeStationInfoModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <span id="stationInfoTitle">🚉 駅情報</span>
+                <span id="stationInfoTitle">駅情報</span>
                 <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeStationInfoModal(null)">&times;</button>
             </div>
             <div id="stationInfoBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeStationInfoModal(null)">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🕰 名称・会社の変遷（旧名）編集モーダル -->
+    <div id="eraModal" class="modal-overlay" onclick="closeEraModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span id="eraModalTitle">🕰 変遷</span>
+                <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeEraModal(null)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin:0 0 12px 0; font-size:12px; color:var(--text-muted); line-height:1.6;">駅名や運営会社が変わった駅について、どの名称の時に訪れたかを記録できます。旧名しか持っていない場合はチェックを外し、複数の旧名がある場合は下の「＋旧名を追加」から追加してください。</p>
+
+                <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:bold; color:var(--text-main); margin-bottom:14px; cursor:pointer;">
+                    <input type="checkbox" id="eraHasCurrentCheckbox">
+                    <span id="eraCurrentLabel">現在の名称を持っている</span>
+                </label>
+
+                <div id="eraFormerList" style="display:flex; flex-direction:column; gap:10px;"></div>
+
+                <button class="action-btn" onclick="addEraFormerNameRow()" style="width:100%; margin-top:12px; background: var(--glass-bg); color: var(--text-main); border: 1px dashed var(--primary);">＋ 旧名を追加</button>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeEraModal(null)">閉じる</button>
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="saveEraData()">保存</button>
             </div>
         </div>
     </div>
@@ -1774,6 +1804,19 @@
         function getSubNameOverride(overrides, s) {
             let resolved = resolveSubNameOverride(overrides, s);
             return resolved.hidden ? null : resolved.value;
+        }
+
+        // 🕰 名称・会社の変遷（旧名）データを、表記ゆれに関わらず探して返す
+        // 見つからない場合は「現名のみ持っている」というデフォルト状態を返す
+        function getStationEraData(eras, s) {
+            if (eras) {
+                let variants = stationFullNameVariants(s);
+                for (let i = 0; i < variants.length; i++) {
+                    let key = sanitizeKey(variants[i]);
+                    if (eras[key] !== undefined) return eras[key];
+                }
+            }
+            return { hasCurrent: true, formerNames: [] };
         }
 
         // ニックネーム取得
@@ -2160,10 +2203,22 @@
             let kana = document.getElementById("customKana").value.trim();
             let sub = document.getElementById("customSub").value.trim();
             let note = document.getElementById("customNote").value.trim();
+            let latRaw = document.getElementById("customLat").value.trim();
+            let lngRaw = document.getElementById("customLng").value.trim();
 
             if (pref === "" || company === "" || line === "" || name === "" || kana === "") {
-                alert("「副駅名」「備考」以外をもれなく入力してね！");
+                alert("「副駅名」「備考」「緯度」「経度」以外をもれなく入力してね！");
                 return;
+            }
+
+            let lat = null, lng = null;
+            if (latRaw !== "" || lngRaw !== "") {
+                lat = parseFloat(latRaw);
+                lng = parseFloat(lngRaw);
+                if (isNaN(lat) || isNaN(lng)) {
+                    alert("緯度・経度は数値（10進法）で入力してください（例：34.7503）。片方だけの入力はできません。");
+                    return;
+                }
             }
 
             let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
@@ -2184,9 +2239,7 @@
                     return;
                 }
 
-                let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
-
-                // マイ駅・副駅名の個人設定に、実際に保存されている表記（新旧いずれか）を特定して引き継ぐ
+                let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note, lat: lat, lng: lng };
                 let myOwnStations = [...getOwnStationsArray(currentUser)];
                 let oldVariants = stationFullNameVariants(oldStation);
                 let matchedOldName = myOwnStations.find(n => oldVariants.includes(n));
@@ -2225,7 +2278,7 @@
                 return;
             }
 
-            let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note };
+            let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note, lat: lat, lng: lng };
             myCustoms.push(newStation);
 
             // 🌟 同名駅完全識別のために、ここでも都道府県を補完したフォーマットを適用
@@ -2245,6 +2298,8 @@
                 document.getElementById("customKana").value = "";
                 document.getElementById("customSub").value = "";
                 document.getElementById("customNote").value = "";
+                document.getElementById("customLat").value = "";
+                document.getElementById("customLng").value = "";
                 alert("「" + name + "」を登録しました！");
                 renderMyCustomStations();
             });
@@ -2264,6 +2319,8 @@
             document.getElementById("customKana").value = target.kana || "";
             document.getElementById("customSub").value = target.subName || "";
             document.getElementById("customNote").value = target.note || "";
+            document.getElementById("customLat").value = (target.lat !== null && target.lat !== undefined) ? target.lat : "";
+            document.getElementById("customLng").value = (target.lng !== null && target.lng !== undefined) ? target.lng : "";
 
             document.getElementById("customStationSubmitBtn").textContent = "この駅の情報を更新する";
             document.getElementById("customStationCancelEditBtn").style.display = "block";
@@ -2280,6 +2337,8 @@
             document.getElementById("customKana").value = "";
             document.getElementById("customSub").value = "";
             document.getElementById("customNote").value = "";
+            document.getElementById("customLat").value = "";
+            document.getElementById("customLng").value = "";
             document.getElementById("customStationSubmitBtn").textContent = "この駅をデータベースに登録";
             document.getElementById("customStationCancelEditBtn").style.display = "none";
         }
@@ -2884,10 +2943,11 @@
             let targetCustoms = (allUserData[targetUser] && allUserData[targetUser].customStations) ? allUserData[targetUser].customStations : [];
             let lookupList = allStations.concat(targetCustoms);
             let subNameOverrides = (allUserData[targetUser] && allUserData[targetUser].subNameOverrides) ? allUserData[targetUser].subNameOverrides : {};
+            let stationEras = (allUserData[targetUser] && allUserData[targetUser].stationEras) ? allUserData[targetUser].stationEras : {};
 
             myOwnNames.forEach(fullName => {
-                // 新旧どちらのキー名でもマッチングできるように判定を強化
-                let stationObj = lookupList.find(s => stationFullNameVariants(s).includes(fullName));
+                // 新旧どちらのキー名でも、鉄道会社の移管・改称でズレていてもマッチングできるように判定を強化
+                let stationObj = findStationByFullNameLoose(fullName, lookupList);
                 
                 if (!stationObj) {
                     let idx = fullName.indexOf("（");
@@ -2921,7 +2981,9 @@
                 prefCounts[stationObj.pref] = (prefCounts[stationObj.pref] || 0) + 1;
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
-                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName });
+                let eraData = getStationEraData(stationEras, stationObj);
+
+                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName, eraData: eraData });
             });
 
             document.getElementById("ownCount").textContent = listData.length;
@@ -2974,7 +3036,11 @@
             let displayList = [...listData]; 
             
             if (keyword !== "") {
-                displayList = displayList.filter(item => item.name.toLowerCase().includes(keyword));
+                displayList = displayList.filter(item => {
+                    let nameMatch = item.name.toLowerCase().includes(keyword);
+                    let subMatch = item.subName && item.subName.toLowerCase().includes(keyword);
+                    return nameMatch || subMatch;
+                });
             }
 
             let ul = document.getElementById("myOwnStationsList");
@@ -3035,6 +3101,27 @@
                     infoDiv.appendChild(pNote);
                 }
 
+                // 🕰 旧名・移管履歴のバッジ表示（現名を持っていない、または旧名が登録されている場合）
+                let activeFormerNames = (item.eraData && item.eraData.formerNames) ? item.eraData.formerNames.filter(f => f.has !== false) : [];
+                if (item.eraData && (item.eraData.hasCurrent === false || activeFormerNames.length > 0)) {
+                    let eraBadge = document.createElement("div");
+                    eraBadge.style.cssText = "font-size:11px; color:var(--primary-dark); margin-top:4px;";
+                    let parts = [];
+                    if (item.eraData.hasCurrent !== false) {
+                        let curLabel = `${item.name}（${item.company}）`;
+                        if (item.line) curLabel += ` ${item.line}`;
+                        parts.push(`現: ${curLabel}`);
+                    }
+                    activeFormerNames.forEach(f => {
+                        let label = `${f.name || item.name}（${f.company || item.company}）`;
+                        if (f.line) label += ` ${f.line}`;
+                        if (f.date) label += ` 〜${f.date}`;
+                        parts.push(`旧: ${label}`);
+                    });
+                    eraBadge.textContent = "🕰 " + parts.join(" → ");
+                    infoDiv.appendChild(eraBadge);
+                }
+
                 if (isEditMode && targetUser === currentUser) {
                     let subEditRow = document.createElement("div");
                     subEditRow.style.cssText = "display:flex; align-items:center; gap:4px; margin-top:8px;";
@@ -3048,11 +3135,25 @@
                     subEditInput.type = "text";
                     subEditInput.value = item.subNameHidden ? "" : (item.subName || "");
                     subEditInput.placeholder = "自分用の副駅名（空欄で共通駅名）";
-                    subEditInput.style.cssText = "flex:1; padding:6px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
+                    subEditInput.style.cssText = "flex:1; min-width:0; padding:6px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
                     subEditInput.onclick = (e) => e.stopPropagation();
                     if (item.subNameHidden) subEditInput.disabled = true;
                     subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value, false);
                     subEditRow.appendChild(subEditInput);
+
+                    let eraBtn = document.createElement("button");
+                    eraBtn.textContent = "🕰 変遷";
+                    eraBtn.className = "own-btn";
+                    eraBtn.style.cssText = "font-size:11px; padding:4px 8px; flex-shrink:0;";
+                    eraBtn.onclick = (e) => { e.stopPropagation(); openEraModal(item); };
+                    subEditRow.appendChild(eraBtn);
+
+                    let delBtn = document.createElement("button");
+                    delBtn.className = "delete-btn";
+                    delBtn.textContent = "削除";
+                    delBtn.style.cssText = "font-size:11px; padding:4px 8px; flex-shrink:0;";
+                    delBtn.onclick = (e) => { e.stopPropagation(); removeOwnStation(item.fullName); };
+                    subEditRow.appendChild(delBtn);
 
                     infoDiv.appendChild(subEditRow);
 
@@ -3089,17 +3190,6 @@
                 infoDiv.title = "タップして駅の詳細・地図を見る";
                 infoDiv.onclick = () => openStationInfoModal(item);
                 li.appendChild(infoDiv);
-
-                if (isEditMode && targetUser === currentUser) {
-                    let btnGroup = document.createElement("div");
-                    btnGroup.className = "btn-group";
-                    let delBtn = document.createElement("button");
-                    delBtn.className = "delete-btn";
-                    delBtn.textContent = "削除";
-                    delBtn.onclick = () => removeOwnStation(item.fullName);
-                    btnGroup.appendChild(delBtn);
-                    li.appendChild(btnGroup);
-                }
 
                 ul.appendChild(li);
             }
@@ -3352,7 +3442,7 @@
                 // マイ駅から抽選
                 let myOwnNames = getOwnStationsArray(currentUser);
                 myOwnNames.forEach(fullName => {
-                    let sObj = combinedStationsList.find(s => stationFullNameVariants(s).includes(fullName));
+                    let sObj = findStationByFullNameLoose(fullName);
                     if (sObj) pool.push(sObj);
                 });
             } else {
@@ -3633,6 +3723,37 @@
         // 📍 エントリーピンを1件登録
         // 🌟 モード（全国／マイ駅）に応じて、そのプレイヤーがこの駅にピンを置けるかどうかを判定
         // 「マイ駅」モードでは、参加枠名と同じニックネームのユーザーの、マイ駅に登録された駅にしかピンを置けない
+        // 🌟 保存されているマイ駅の文字列（旧会社名を含む場合がある）から、
+        // 現在のデータベース上の駅オブジェクトを可能な限り特定する（会社移管・改称の救済用）
+        function findStationByFullNameLoose(fullName, list) {
+            list = list || combinedStationsList;
+            let exact = list.find(s => stationFullNameVariants(s).includes(fullName));
+            if (exact) return exact;
+
+            // 完全一致しない場合、駅名＋都道府県が一致する候補を緩く探す
+            let m = fullName.match(/^(.+?)（(.+?)）$/);
+            if (!m) return null;
+            let rawName = m[1];
+            let inside = m[2]; // 「都道府県・会社」「会社・都道府県」「会社」のいずれかの形式
+            let candidates = list.filter(s => s.name === rawName && inside.includes(s.pref));
+            if (candidates.length === 1) return candidates[0];
+            return null; // 複数該当・特定できない場合は誤爆防止のため救済しない
+        }
+
+        // 🌟 鉄道会社の移管・合併などで会社名だけ変わったケースを救済するための緩い所持判定
+        // （駅名＋都道府県が一致すれば、鉄道会社名の違いは無視して「持っている」とみなす）
+        // 距離企画の「マイ駅のみ」モードでのピン設置可否判定にのみ使用する
+        function ownsStationLoose(ownStations, targetStation) {
+            return ownStations.some(fullName => {
+                let sObj = combinedStationsList.find(s => stationFullNameVariants(s).includes(fullName));
+                if (sObj) return sObj.name === targetStation.name && sObj.pref === targetStation.pref;
+                // データベース上に見つからない場合（削除済みカスタム駅など）は、文字列から駅名だけ雑に抽出して比較
+                let idx = fullName.indexOf("（");
+                let rawName = idx !== -1 ? fullName.substring(0, idx) : fullName;
+                return rawName === targetStation.name;
+            });
+        }
+
         function checkPinAllowedByMode(player, station) {
             let mode = document.getElementById("distModeOption").value;
             if (mode !== "myOwn") return { ok: true };
@@ -3642,10 +3763,10 @@
                 return { ok: false, reason: `「マイ駅」モードでは、参加枠名と同じニックネームの登録メンバーのマイ駅からしかピンを置けません。\n「${player}」というニックネームのメンバーが見つかりませんでした。` };
             }
             let ownStations = getOwnStationsArray(uid);
-            if (!isStationInList(ownStations, station)) {
-                return { ok: false, reason: `「マイ駅」モードのため、${player}さんのマイ駅に登録されていない「${station.name}」にはピンを置けません。` };
-            }
-            return { ok: true };
+            if (isStationInList(ownStations, station)) return { ok: true };
+            if (ownsStationLoose(ownStations, station)) return { ok: true };
+
+            return { ok: false, reason: `「マイ駅」モードのため、${player}さんのマイ駅に登録されていない「${station.name}」にはピンを置けません。` };
         }
 
         function registerPlayerPin() {
@@ -4308,7 +4429,7 @@
         function openStationInfoModal(station) {
             if (!station) return;
 
-            document.getElementById("stationInfoTitle").textContent = `🚉 ${station.name}`;
+            document.getElementById("stationInfoTitle").textContent = `${station.name}`;
 
             let body = document.getElementById("stationInfoBody");
             body.innerHTML = "";
@@ -4379,6 +4500,150 @@
         function closeStationInfoModal(e) {
             const modal = document.getElementById("stationInfoModal");
             modal.classList.remove("active");
+        }
+
+        // 🕰 名称・会社の変遷（旧名）モーダル
+        let currentEraStation = null;
+
+        function openEraModal(item) {
+            currentEraStation = item;
+
+            let eras = (allUserData[currentUser] && allUserData[currentUser].stationEras) ? allUserData[currentUser].stationEras : null;
+            let eraData = getStationEraData(eras, item);
+
+            document.getElementById("eraModalTitle").textContent = `🕰 ${item.name} の変遷`;
+            document.getElementById("eraCurrentLabel").textContent = `現在の名称（${item.company}）を持っている`;
+            document.getElementById("eraHasCurrentCheckbox").checked = eraData.hasCurrent !== false;
+
+            let listEl = document.getElementById("eraFormerList");
+            listEl.innerHTML = "";
+            (eraData.formerNames || []).forEach(f => addEraFormerNameRow(f));
+
+            document.getElementById("eraModal").classList.add("active");
+        }
+
+        function closeEraModal(e) {
+            document.getElementById("eraModal").classList.remove("active");
+            currentEraStation = null;
+        }
+
+        function addEraFormerNameRow(prefill) {
+            prefill = prefill || {};
+            let listEl = document.getElementById("eraFormerList");
+
+            let row = document.createElement("div");
+            row.className = "era-former-row";
+            row.style.cssText = "border:1px solid var(--glass-border); border-radius:10px; padding:10px; background:var(--input-bg);";
+
+            let topLine = document.createElement("div");
+            topLine.style.cssText = "display:flex; align-items:center; gap:8px; margin-bottom:8px;";
+
+            let checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "era-former-has";
+            checkbox.checked = prefill.has !== false;
+            topLine.appendChild(checkbox);
+
+            let checkLabel = document.createElement("span");
+            checkLabel.textContent = "この旧名を持っている";
+            checkLabel.style.cssText = "font-size:12.5px; color:var(--text-main); flex:1;";
+            topLine.appendChild(checkLabel);
+
+            let removeBtn = document.createElement("button");
+            removeBtn.textContent = "削除";
+            removeBtn.className = "delete-btn";
+            removeBtn.onclick = () => row.remove();
+            topLine.appendChild(removeBtn);
+
+            row.appendChild(topLine);
+
+            let fieldsGrid = document.createElement("div");
+            fieldsGrid.style.cssText = "display:grid; grid-template-columns: 1fr 1fr; gap:6px;";
+
+            let nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.className = "era-former-name";
+            nameInput.placeholder = "旧駅名（例：河原町）";
+            nameInput.value = prefill.name || "";
+            nameInput.style.cssText = "padding:6px 8px; font-size:12.5px;";
+            fieldsGrid.appendChild(nameInput);
+
+            let kanaInput = document.createElement("input");
+            kanaInput.type = "text";
+            kanaInput.className = "era-former-kana";
+            kanaInput.placeholder = "旧ふりがな（例：かわらまち）";
+            kanaInput.value = prefill.kana || "";
+            kanaInput.style.cssText = "padding:6px 8px; font-size:12.5px;";
+            fieldsGrid.appendChild(kanaInput);
+
+            let companyInput = document.createElement("input");
+            companyInput.type = "text";
+            companyInput.className = "era-former-company";
+            companyInput.placeholder = "旧鉄道会社（例：泉北高速鉄道）";
+            companyInput.value = prefill.company || "";
+            companyInput.style.cssText = "padding:6px 8px; font-size:12.5px;";
+            fieldsGrid.appendChild(companyInput);
+
+            let lineInput = document.createElement("input");
+            lineInput.type = "text";
+            lineInput.className = "era-former-line";
+            lineInput.placeholder = "旧路線名（例：北陸本線）";
+            lineInput.value = prefill.line || "";
+            lineInput.style.cssText = "padding:6px 8px; font-size:12.5px;";
+            fieldsGrid.appendChild(lineInput);
+
+            row.appendChild(fieldsGrid);
+
+            let dateRow = document.createElement("div");
+            dateRow.style.cssText = "margin-top:6px;";
+            let dateLabel = document.createElement("label");
+            dateLabel.style.cssText = "font-size:11px; color:var(--text-muted);";
+            dateLabel.textContent = "変わった日（任意）";
+            let dateInput = document.createElement("input");
+            dateInput.type = "date";
+            dateInput.className = "era-former-date";
+            dateInput.value = prefill.date || "";
+            dateInput.style.cssText = "display:block; padding:6px 8px; font-size:12.5px; margin-top:2px; width:100%; box-sizing:border-box;";
+            dateRow.appendChild(dateLabel);
+            dateRow.appendChild(dateInput);
+            row.appendChild(dateRow);
+
+            listEl.appendChild(row);
+        }
+
+        function saveEraData() {
+            if (!currentEraStation || !currentUser) return;
+
+            let hasCurrent = document.getElementById("eraHasCurrentCheckbox").checked;
+
+            let formerNames = [];
+            document.querySelectorAll("#eraFormerList .era-former-row").forEach(row => {
+                let name = row.querySelector(".era-former-name").value.trim();
+                let kana = row.querySelector(".era-former-kana").value.trim();
+                let company = row.querySelector(".era-former-company").value.trim();
+                let line = row.querySelector(".era-former-line").value.trim();
+                let date = row.querySelector(".era-former-date").value;
+                let has = row.querySelector(".era-former-has").checked;
+                if (name === "" && kana === "" && company === "" && line === "") return; // 空行は保存しない
+                formerNames.push({ name: name, kana: kana, company: company, line: line, date: date, has: has });
+            });
+
+            let key = sanitizeKey(makeStationFullName(currentEraStation));
+            let path = "users/" + currentUser + "/stationEras/" + key;
+
+            if (!hasCurrent && formerNames.length === 0) {
+                // 記録することが何もなければ削除してデフォルト状態に戻す
+                database.ref(path).remove().then(() => {
+                    closeEraModal(null);
+                    updateOwnList();
+                });
+                return;
+            }
+
+            database.ref(path).set({ hasCurrent: hasCurrent, formerNames: formerNames }).then(() => {
+                closeEraModal(null);
+                updateOwnList();
+            });
         }
 
         function copyModalContent() {
