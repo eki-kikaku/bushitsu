@@ -405,6 +405,7 @@
             align-items: flex-end;
             gap: 12px;
             transition: var(--transition);
+            touch-action: pan-y;
         }
 
         [data-theme="light"] li.station-card {
@@ -499,6 +500,7 @@
             cursor: pointer;
             border: none;
             transition: var(--transition);
+            touch-action: manipulation;
         }
 
         .delete-btn { background-color: #ef4444; color: white; }
@@ -1042,16 +1044,29 @@
 
                     <div class="stats-title">鉄道会社別</div>
                     <div id="statsCompany" class="stats-grid">データがありません</div>
+
+                    <div class="stats-title">訪問記録（年別）</div>
+                    <div id="statsYear" class="stats-grid">データがありません</div>
+
+                    <div class="stats-title">訪問記録（月別）</div>
+                    <div id="statsMonth" class="stats-grid">データがありません</div>
+
+                    <div class="stats-title">訪問記録（週別）</div>
+                    <div id="statsWeek" class="stats-grid">データがありません</div>
                 </div>
             </details>
 
-            <div class="bento-card" style="padding: 10px; margin-bottom: 12px; display: flex; gap: 8px; align-items: center;">
+            <div class="bento-card" style="padding: 10px; margin-bottom: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <input type="text" id="myOwnSearchInput" placeholder="マイ駅から検索..." oninput="updateOwnList(true)" style="padding: 8px 12px; font-size: 14px; flex: 1;">
                 <select id="myOwnSortSelect" onchange="updateOwnList(true)" style="padding: 8px 12px; font-size: 14px; width: auto; max-width: 130px; cursor: pointer;">
                     <option value="kana">五十音順</option>
                     <option value="pref">都道府県順</option>
                     <option value="company">鉄道会社順</option>
                 </select>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--text-main); white-space:nowrap; cursor:pointer;">
+                    <input type="checkbox" id="myOwnFavOnlyCheckbox" onchange="updateOwnList(true)">
+                    ★のみ
+                </label>
             </div>
 
             <!-- マイ駅上部ページネーション -->
@@ -1103,7 +1118,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
+                    <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
                 </div>
                 </div>
                 </details>
@@ -1143,7 +1158,7 @@
                 </div>
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
+                    <textarea id="shiriCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：マイ駅でしりとりを繋げてね！"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1231,7 +1246,7 @@
 
                 <div>
                     <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">ルール説明自由入力欄</label>
-                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="ルールを自由に記入してください"></textarea>
+                    <textarea id="distCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：お題に一番近い駅を指定してね！同名駅ピタリは得点3倍！"></textarea>
                 </div>
                 </div>
                 </details>
@@ -1448,7 +1463,7 @@
     <div id="stationInfoModal" class="modal-overlay" onclick="closeStationInfoModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <span id="stationInfoTitle">駅情報</span>
+                <span id="stationInfoTitle">🚉 駅情報</span>
                 <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeStationInfoModal(null)">&times;</button>
             </div>
             <div id="stationInfoBody" class="modal-body"></div>
@@ -1480,6 +1495,20 @@
             <div class="modal-footer">
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeEraModal(null)">閉じる</button>
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="saveEraData()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👤 所持メンバー詳細モーダル -->
+    <div id="ownerDetailModal" class="modal-overlay" onclick="closeOwnerDetailModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span id="ownerDetailTitle">👤 詳細</span>
+                <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeOwnerDetailModal(null)">&times;</button>
+            </div>
+            <div id="ownerDetailBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeOwnerDetailModal(null)">閉じる</button>
             </div>
         </div>
     </div>
@@ -2188,8 +2217,24 @@
         }
 
         function refreshCombinedStations() {
-            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? allUserData[currentUser].customStations : [];
-            combinedStationsList = allStations.concat(myCustoms);
+            // 🌟 カスタム駅は「登録した本人だけ」ではなく、全ユーザー分をまとめて重複排除してから使う。
+            // こうすることで、複数人が同じ廃駅・外国の駅などを個別に登録しても、
+            // 駅名・都道府県・鉄道会社が一致する限り1枚のカードにまとまる。
+            let allCustoms = [];
+            let seenKeys = new Set();
+
+            Object.keys(allUserData).forEach(uid => {
+                let customs = (allUserData[uid] && allUserData[uid].customStations) ? allUserData[uid].customStations : [];
+                customs.forEach(c => {
+                    let key = c.name + "|" + c.pref + "|" + c.company;
+                    if (!seenKeys.has(key)) {
+                        seenKeys.add(key);
+                        allCustoms.push(c);
+                    }
+                });
+            });
+
+            combinedStationsList = allStations.concat(allCustoms);
             combinedStationsList.sort((a, b) => compareKanaMultiScript(a.kana, b.kana));
         }
 
@@ -2271,10 +2316,20 @@
                 return;
             }
 
-            let exists = myCustoms.some(s => s.name === name && s.company === company) ||
-                         allStations.some(s => s.name === name && s.company === company);
-            if (exists) {
-                alert("その駅はすでに登録されています！");
+            // 🌟 自分の登録済みだけでなく、他のメンバーが既に登録している同じ駅も検知する
+            // （name+company が一致すれば、誰が登録したものでも「既にある」とみなす）
+            let allOtherCustoms = [];
+            Object.keys(allUserData).forEach(uid => {
+                let customs = (allUserData[uid] && allUserData[uid].customStations) ? allUserData[uid].customStations : [];
+                allOtherCustoms = allOtherCustoms.concat(customs);
+            });
+
+            let existingMatch = allOtherCustoms.find(s => s.name === name && s.company === company) ||
+                                 allStations.find(s => s.name === name && s.company === company);
+            if (existingMatch) {
+                if (confirm(`「${name}（${existingMatch.pref}・${existingMatch.company}）」は既に登録されています。新規登録の代わりに、この駅をマイ駅に追加しますか？`)) {
+                    addOwnStation(existingMatch);
+                }
                 return;
             }
 
@@ -2758,7 +2813,7 @@
                     infoDiv.appendChild(pNote);
                 }
 
-                let owners = [];
+                let ownerEntries = [];
                 Object.keys(allUserData).sort((a, b) => nickOf(a).localeCompare(nickOf(b), 'ja')).forEach(uid => {
                     let ownStations = getOwnStationsArray(uid);
                     if (isStationInList(ownStations, item)) {
@@ -2774,14 +2829,22 @@
                             label += `（なし）`;
                         }
 
-                        owners.push(uid === currentUser ? `${label}(自分)` : label);
+                        ownerEntries.push({ uid: uid, label: uid === currentUser ? `${label}(自分)` : label });
                     }
                 });
 
-                if (owners.length > 0) {
+                if (ownerEntries.length > 0) {
                     let pOwners = document.createElement("div");
                     pOwners.className = "station-owners";
-                    pOwners.textContent = `所持: ${owners.join(", ")}`;
+                    pOwners.appendChild(document.createTextNode("所持: "));
+                    ownerEntries.forEach((entry, idx) => {
+                        let ownerSpan = document.createElement("span");
+                        ownerSpan.textContent = entry.label;
+                        ownerSpan.style.cssText = "cursor:pointer; text-decoration:underline dotted; touch-action:manipulation;";
+                        ownerSpan.onclick = (e) => { e.stopPropagation(); openOwnerDetailModal(entry.uid, item); };
+                        pOwners.appendChild(ownerSpan);
+                        if (idx < ownerEntries.length - 1) pOwners.appendChild(document.createTextNode(", "));
+                    });
                     infoDiv.appendChild(pOwners);
                 }
                 infoDiv.style.cursor = "pointer";
@@ -2901,6 +2964,68 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
+        // 🗓 訪問日の週・月・年の集計用ヘルパー
+        function getISOWeekParts_(date) {
+            let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            let dayNum = (d.getUTCDay() + 6) % 7; // 月曜=0
+            d.setUTCDate(d.getUTCDate() - dayNum + 3);
+            let firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+            let fdayNum = (firstThursday.getUTCDay() + 6) % 7;
+            firstThursday.setUTCDate(firstThursday.getUTCDate() - fdayNum + 3);
+            let weekNum = 1 + Math.round((d - firstThursday) / (7 * 86400000));
+            return { year: d.getUTCFullYear(), week: weekNum };
+        }
+
+        function yearKeyOf(dateStr) {
+            return dateStr.slice(0, 4);
+        }
+        function monthKeyOf(dateStr) {
+            return dateStr.slice(0, 7); // "YYYY-MM"
+        }
+        function weekKeyOf(dateStr) {
+            let d = new Date(dateStr + "T00:00:00");
+            if (isNaN(d.getTime())) return null;
+            let p = getISOWeekParts_(d);
+            return p.year + "-W" + (p.week < 10 ? "0" + p.week : p.week);
+        }
+
+        // キーを時系列順に並べて、簡単な横棒グラフとして描画する
+        function renderTimeStats(targetId, countsObj, labelFormatter) {
+            let sortedKeys = Object.keys(countsObj).sort();
+            let el = document.getElementById(targetId);
+            if (sortedKeys.length === 0) {
+                el.innerHTML = "<div style='font-size:12px; color:var(--text-muted);'>訪問日が記録された駅がまだありません（マイ駅の編集モードで訪問日を入力すると集計されます）</div>";
+                return;
+            }
+            let maxVal = Math.max.apply(null, sortedKeys.map(k => countsObj[k]));
+            let html = sortedKeys.map(key => {
+                let val = countsObj[key];
+                let pct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
+                return `
+                    <div style="margin-bottom:6px;">
+                        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-main); margin-bottom:2px;">
+                            <span>${escapeHtml(labelFormatter(key))}</span>
+                            <span style="font-weight:bold;">${val}駅</span>
+                        </div>
+                        <div style="background:var(--glass-border); border-radius:4px; height:10px; overflow:hidden;">
+                            <div style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:${pct}%; border-radius:4px;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+            el.innerHTML = `<div style="grid-column: 1 / -1;">${html}</div>`;
+        }
+
+        function formatYearLabel(key) { return key + "年"; }
+        function formatMonthLabel(key) {
+            let parts = key.split("-");
+            return `${parts[0]}年${parseInt(parts[1], 10)}月`;
+        }
+        function formatWeekLabel(key) {
+            let parts = key.split("-W");
+            return `${parts[0]}年 第${parseInt(parts[1], 10)}週`;
+        }
+
         const renderStats = (targetId, countsObj, prefix = "", suffix = "", sortType = "default") => {
             let sortedKeys = Object.keys(countsObj);
 
@@ -2937,6 +3062,9 @@
             let kanaEndCounts = {};
             let prefCounts = {};
             let companyCounts = {};
+            let yearCounts = {};
+            let monthCounts = {};
+            let weekCounts = {};
             
             let listData = [];
 
@@ -2944,6 +3072,8 @@
             let lookupList = allStations.concat(targetCustoms);
             let subNameOverrides = (allUserData[targetUser] && allUserData[targetUser].subNameOverrides) ? allUserData[targetUser].subNameOverrides : {};
             let stationEras = (allUserData[targetUser] && allUserData[targetUser].stationEras) ? allUserData[targetUser].stationEras : {};
+            let visitDates = (allUserData[targetUser] && allUserData[targetUser].visitDates) ? allUserData[targetUser].visitDates : {};
+            let favoriteStations = (allUserData[targetUser] && allUserData[targetUser].favoriteStations) ? allUserData[targetUser].favoriteStations : [];
 
             myOwnNames.forEach(fullName => {
                 // 新旧どちらのキー名でも、鉄道会社の移管・改称でズレていてもマッチングできるように判定を強化
@@ -2982,8 +3112,23 @@
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
                 let eraData = getStationEraData(stationEras, stationObj);
+                let visitDate = getVisitDate(visitDates, fullName, stationObj);
 
-                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName, eraData: eraData });
+                if (visitDate && visitDate !== VISITDATE_DISABLED_SENTINEL) {
+                    let yKey = yearKeyOf(visitDate);
+                    let mKey = monthKeyOf(visitDate);
+                    let wKey = weekKeyOf(visitDate);
+                    yearCounts[yKey] = (yearCounts[yKey] || 0) + 1;
+                    monthCounts[mKey] = (monthCounts[mKey] || 0) + 1;
+                    if (wKey) weekCounts[wKey] = (weekCounts[wKey] || 0) + 1;
+                }
+
+                let isFavorite = isStationInList(favoriteStations, stationObj) || favoriteStations.includes(fullName);
+
+                let visitDateDisabled = visitDate === VISITDATE_DISABLED_SENTINEL;
+                let displayVisitDate = visitDateDisabled ? "" : visitDate;
+
+                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName, eraData: eraData, visitDate: displayVisitDate, visitDateDisabled: visitDateDisabled, isFavorite: isFavorite });
             });
 
             document.getElementById("ownCount").textContent = listData.length;
@@ -3031,6 +3176,9 @@
             renderGojuonTable("statsKanaEnd", kanaEndCounts);
             renderStats("statsPref", prefCounts, "", "", "pref");
             renderStats("statsCompany", companyCounts, "", "", "count");
+            renderTimeStats("statsYear", yearCounts, formatYearLabel);
+            renderTimeStats("statsMonth", monthCounts, formatMonthLabel);
+            renderTimeStats("statsWeek", weekCounts, formatWeekLabel);
 
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
             let displayList = [...listData]; 
@@ -3041,6 +3189,10 @@
                     let subMatch = item.subName && item.subName.toLowerCase().includes(keyword);
                     return nameMatch || subMatch;
                 });
+            }
+
+            if (document.getElementById("myOwnFavOnlyCheckbox").checked) {
+                displayList = displayList.filter(item => item.isFavorite);
             }
 
             let ul = document.getElementById("myOwnStationsList");
@@ -3087,6 +3239,13 @@
                     sSub.textContent = `（${item.subName}）`;
                     nameRow.appendChild(sSub);
                 }
+
+                let favBtn = document.createElement("button");
+                favBtn.textContent = item.isFavorite ? "★" : "☆";
+                favBtn.title = item.isFavorite ? "お気に入りから外す" : "お気に入りに追加";
+                favBtn.style.cssText = `margin-left:auto; background:none; border:none; font-size:19px; line-height:1; cursor:pointer; padding:0 2px; color:${item.isFavorite ? '#f59e0b' : 'var(--text-muted)'}; touch-action: manipulation;`;
+                favBtn.onclick = (e) => { e.stopPropagation(); toggleFavoriteStation(item.fullName); };
+                nameRow.appendChild(favBtn);
                 infoDiv.appendChild(nameRow);
 
                 let pMeta = document.createElement("div");
@@ -3124,18 +3283,13 @@
 
                 if (isEditMode && targetUser === currentUser) {
                     let subEditRow = document.createElement("div");
-                    subEditRow.style.cssText = "display:flex; align-items:center; gap:4px; margin-top:8px;";
-
-                    let subEditLabel = document.createElement("span");
-                    subEditLabel.textContent = "副駅名:";
-                    subEditLabel.style.cssText = "font-size:11px; color:var(--text-muted); white-space:nowrap;";
-                    subEditRow.appendChild(subEditLabel);
+                    subEditRow.style.cssText = "display:flex; align-items:center; gap:6px; margin-top:8px; touch-action: pan-y;";
 
                     let subEditInput = document.createElement("input");
                     subEditInput.type = "text";
                     subEditInput.value = item.subNameHidden ? "" : (item.subName || "");
                     subEditInput.placeholder = "自分用の副駅名（空欄で共通駅名）";
-                    subEditInput.style.cssText = "flex:1; min-width:0; padding:6px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
+                    subEditInput.style.cssText = "flex:1; min-width:0; padding:8px 10px; font-size:12px; border-radius:6px; background: var(--input-bg);";
                     subEditInput.onclick = (e) => e.stopPropagation();
                     if (item.subNameHidden) subEditInput.disabled = true;
                     subEditInput.onchange = () => updateSubNameOverride(item.fullName, subEditInput.value, false);
@@ -3144,14 +3298,14 @@
                     let eraBtn = document.createElement("button");
                     eraBtn.textContent = "🕰 変遷";
                     eraBtn.className = "own-btn";
-                    eraBtn.style.cssText = "font-size:11px; padding:4px 8px; flex-shrink:0;";
+                    eraBtn.style.cssText = "font-size:11px; padding:8px 10px; flex-shrink:0; touch-action: manipulation;";
                     eraBtn.onclick = (e) => { e.stopPropagation(); openEraModal(item); };
                     subEditRow.appendChild(eraBtn);
 
                     let delBtn = document.createElement("button");
                     delBtn.className = "delete-btn";
                     delBtn.textContent = "削除";
-                    delBtn.style.cssText = "font-size:11px; padding:4px 8px; flex-shrink:0;";
+                    delBtn.style.cssText = "font-size:11px; padding:8px 10px; flex-shrink:0; touch-action: manipulation;";
                     delBtn.onclick = (e) => { e.stopPropagation(); removeOwnStation(item.fullName); };
                     subEditRow.appendChild(delBtn);
 
@@ -3184,6 +3338,51 @@
 
                         infoDiv.appendChild(hideRow);
                     }
+
+                    // 🗓 訪問日の記録（副駅名の行とは分けて、誤タップを防ぐ）／各駅ごとに記録有無を選べる
+                    let visitRow = document.createElement("div");
+                    visitRow.style.cssText = "display:flex; align-items:center; gap:6px; margin-top:6px; touch-action: pan-y;";
+                    visitRow.onclick = (e) => e.stopPropagation();
+
+                    let visitLabel = document.createElement("span");
+                    visitLabel.textContent = "訪問日:";
+                    visitLabel.style.cssText = "font-size:11px; color:var(--text-muted); white-space:nowrap;";
+                    visitRow.appendChild(visitLabel);
+
+                    let visitInput = document.createElement("input");
+                    visitInput.type = "date";
+                    visitInput.value = item.visitDate || "";
+                    visitInput.style.cssText = "flex:1; min-width:0; padding:6px 8px; font-size:12px; border-radius:6px; background: var(--input-bg);";
+                    if (item.visitDateDisabled) visitInput.disabled = true;
+                    visitInput.onchange = () => updateVisitDate(item.fullName, visitInput.value);
+                    visitRow.appendChild(visitInput);
+
+                    infoDiv.appendChild(visitRow);
+
+                    let visitDisableRow = document.createElement("label");
+                    visitDisableRow.style.cssText = "display:flex; align-items:center; gap:5px; margin-top:4px; font-size:11px; color:var(--text-muted); cursor:pointer;";
+                    visitDisableRow.onclick = (e) => e.stopPropagation();
+
+                    let visitDisableCheckbox = document.createElement("input");
+                    visitDisableCheckbox.type = "checkbox";
+                    visitDisableCheckbox.checked = !!item.visitDateDisabled;
+                    visitDisableCheckbox.onchange = () => {
+                        if (visitDisableCheckbox.checked) {
+                            visitInput.value = "";
+                            visitInput.disabled = true;
+                            setVisitDateDisabled(item.fullName, true);
+                        } else {
+                            visitInput.disabled = false;
+                            setVisitDateDisabled(item.fullName, false);
+                        }
+                    };
+                    visitDisableRow.appendChild(visitDisableCheckbox);
+
+                    let visitDisableText = document.createElement("span");
+                    visitDisableText.textContent = "この駅の訪問日は記録しない";
+                    visitDisableRow.appendChild(visitDisableText);
+
+                    infoDiv.appendChild(visitDisableRow);
                 }
 
                 infoDiv.style.cursor = "pointer";
@@ -3214,6 +3413,53 @@
             } else {
                 database.ref(path).set(newValue.trim());
             }
+        }
+
+        // 🗓 訪問日の記録（YYYY-MM-DD）。"__NONE__" は「この駅は訪問日を記録しない」という明示的な指定
+        const VISITDATE_DISABLED_SENTINEL = "__NONE__";
+
+        function updateVisitDate(fullName, dateValue) {
+            let key = sanitizeKey(fullName);
+            let path = "users/" + currentUser + "/visitDates/" + key;
+            if (!dateValue) {
+                database.ref(path).remove();
+            } else {
+                database.ref(path).set(dateValue);
+            }
+        }
+
+        function setVisitDateDisabled(fullName, disabled) {
+            let key = sanitizeKey(fullName);
+            let path = "users/" + currentUser + "/visitDates/" + key;
+            if (disabled) {
+                database.ref(path).set(VISITDATE_DISABLED_SENTINEL);
+            } else {
+                database.ref(path).remove();
+            }
+        }
+
+        // 🌟 表記ゆれ（保存順の違い）に関わらず、訪問日を探す
+        function getVisitDate(visitDates, fullName, s) {
+            if (!visitDates) return "";
+            if (visitDates[sanitizeKey(fullName)] !== undefined) return visitDates[sanitizeKey(fullName)];
+            let variants = stationFullNameVariants(s);
+            for (let i = 0; i < variants.length; i++) {
+                let key = sanitizeKey(variants[i]);
+                if (visitDates[key] !== undefined) return visitDates[key];
+            }
+            return "";
+        }
+
+        // ⭐ お気に入りの追加・解除
+        function toggleFavoriteStation(fullName) {
+            if (!currentUser) return;
+            let favorites = (allUserData[currentUser] && allUserData[currentUser].favoriteStations) ? [...allUserData[currentUser].favoriteStations] : [];
+            if (favorites.includes(fullName)) {
+                favorites = favorites.filter(n => n !== fullName);
+            } else {
+                favorites.push(fullName);
+            }
+            database.ref("users/" + currentUser + "/favoriteStations").set(favorites);
         }
 
         function changeUsername() {
@@ -3500,11 +3746,11 @@
                         modeTitle = "駅名乱数モード";
                         lastOdaiText = `駅名乱数モード\n${finalStation} ${finalIndex}文字目 → 「${finalChar}」`;
                     } else if (type === "jouyo") {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🏮 常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">常用漢字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "常用漢字モード";
                         lastOdaiText = `「${finalChar}」`;
                     } else {
-                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">🌍 全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
+                        displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">全駅文字モード</span><br><b style="font-size:38px; color:var(--primary-dark);">「${escapeHtml(finalChar)}」</b>`;
                         modeTitle = "全駅文字モード";
                         lastOdaiText = `「${finalChar}」`;
                     }
@@ -3574,7 +3820,7 @@
                     let fullText = buildShiritoriOdaiText(historyItem);
                     let sourceLines = (charSources || []).map(p => `${p.station} ${p.index}文字目 → 「${p.char}」`);
 
-                    let displayHtml = `<span style="font-size:14px; opacity:0.7;">🏮 ${escapeHtml(modeTitle)}</span><br>`;
+                    let displayHtml = `<span style="font-size:14px; opacity:0.7;">${escapeHtml(modeTitle)}</span><br>`;
                     if (sourceLines.length > 0) {
                         displayHtml += `<div style="font-size:12.5px; opacity:0.85; margin: 4px 0; line-height:1.5;">${sourceLines.map(l => escapeHtml(l)).join("<br>")}</div>`;
                     }
@@ -4429,7 +4675,7 @@
         function openStationInfoModal(station) {
             if (!station) return;
 
-            document.getElementById("stationInfoTitle").textContent = `${station.name}`;
+            document.getElementById("stationInfoTitle").textContent = `🚉 ${station.name}`;
 
             let body = document.getElementById("stationInfoBody");
             body.innerHTML = "";
@@ -4502,6 +4748,89 @@
             modal.classList.remove("active");
         }
 
+        // 👤 所持メンバーの詳細（副駅名・訪問日・お気に入り・変遷）を表示
+        function openOwnerDetailModal(uid, station) {
+            let nickname = nickOf(uid);
+            document.getElementById("ownerDetailTitle").textContent = `👤 ${nickname} さんの ${station.name}`;
+
+            let body = document.getElementById("ownerDetailBody");
+            body.innerHTML = "";
+
+            let userData = allUserData[uid] || {};
+            let ownStations = getOwnStationsArray(uid);
+
+            let addRow = (label, value) => {
+                if (!value) return;
+                let row = document.createElement("div");
+                row.style.cssText = "margin-bottom: 12px;";
+                let labelSpan = document.createElement("div");
+                labelSpan.textContent = label;
+                labelSpan.style.cssText = "font-size: 11px; color: var(--text-muted); margin-bottom: 2px;";
+                let valueSpan = document.createElement("div");
+                valueSpan.textContent = value;
+                valueSpan.style.cssText = "font-size: 14.5px; color: var(--text-main); font-weight: 600;";
+                row.appendChild(labelSpan);
+                row.appendChild(valueSpan);
+                body.appendChild(row);
+            };
+
+            // 副駅名
+            let overrides = userData.subNameOverrides || {};
+            let subInfo = resolveSubNameOverride(overrides, station);
+            if (subInfo.hidden) {
+                addRow("副駅名", "（表示しない設定）");
+            } else if (subInfo.hasOverride) {
+                addRow("副駅名（個人設定）", subInfo.value);
+            } else if (station.subName) {
+                addRow("副駅名", station.subName + "（共通・個人設定なし）");
+            }
+
+            // 訪問日
+            let visitDates = userData.visitDates || {};
+            let visitDate = getVisitDate(visitDates, "", station);
+            // fullName不明な場合があるため、所持リストの中から実際の保存キーを探して再取得
+            let matchedFullName = ownStations.find(n => stationFullNameVariants(station).includes(n));
+            if (matchedFullName) {
+                visitDate = getVisitDate(visitDates, matchedFullName, station);
+            }
+            if (visitDate === VISITDATE_DISABLED_SENTINEL) {
+                addRow("訪問日", "（記録しない設定）");
+            } else if (visitDate) {
+                addRow("訪問日", visitDate);
+            }
+
+            // お気に入り
+            let favorites = userData.favoriteStations || [];
+            let isFav = isStationInList(favorites, station);
+            addRow("お気に入り", isFav ? "★ 登録あり" : "");
+
+            // 変遷（旧名）
+            let eras = userData.stationEras || {};
+            let eraData = getStationEraData(eras, station);
+            let activeFormer = (eraData.formerNames || []).filter(f => f.has !== false);
+            if (eraData.hasCurrent === false || activeFormer.length > 0) {
+                let parts = [];
+                if (eraData.hasCurrent !== false) parts.push(`現: ${station.name}（${station.company}）`);
+                activeFormer.forEach(f => {
+                    let l = `${f.name || station.name}（${f.company || station.company}）`;
+                    if (f.line) l += ` ${f.line}`;
+                    if (f.date) l += ` 〜${f.date}`;
+                    parts.push(`旧: ${l}`);
+                });
+                addRow("変遷", parts.join(" → "));
+            }
+
+            if (body.innerHTML === "") {
+                body.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">このユーザーは、この駅について特に個人設定を行っていません。</div>';
+            }
+
+            document.getElementById("ownerDetailModal").classList.add("active");
+        }
+
+        function closeOwnerDetailModal(e) {
+            document.getElementById("ownerDetailModal").classList.remove("active");
+        }
+
         // 🕰 名称・会社の変遷（旧名）モーダル
         let currentEraStation = null;
 
@@ -4571,7 +4900,7 @@
             let kanaInput = document.createElement("input");
             kanaInput.type = "text";
             kanaInput.className = "era-former-kana";
-            kanaInput.placeholder = "旧ふりがな（例：かわらまち）";
+            kanaInput.placeholder = "旧ふりがな（任意）";
             kanaInput.value = prefill.kana || "";
             kanaInput.style.cssText = "padding:6px 8px; font-size:12.5px;";
             fieldsGrid.appendChild(kanaInput);
