@@ -1044,15 +1044,6 @@
 
                     <div class="stats-title">鉄道会社別</div>
                     <div id="statsCompany" class="stats-grid">データがありません</div>
-
-                    <div class="stats-title">訪問記録（年別）</div>
-                    <div id="statsYear" class="stats-grid">データがありません</div>
-
-                    <div class="stats-title">訪問記録（月別）</div>
-                    <div id="statsMonth" class="stats-grid">データがありません</div>
-
-                    <div class="stats-title">訪問記録（週別）</div>
-                    <div id="statsWeek" class="stats-grid">データがありません</div>
                 </div>
             </details>
 
@@ -2964,68 +2955,6 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
-        // 🗓 訪問日の週・月・年の集計用ヘルパー
-        function getISOWeekParts_(date) {
-            let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            let dayNum = (d.getUTCDay() + 6) % 7; // 月曜=0
-            d.setUTCDate(d.getUTCDate() - dayNum + 3);
-            let firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-            let fdayNum = (firstThursday.getUTCDay() + 6) % 7;
-            firstThursday.setUTCDate(firstThursday.getUTCDate() - fdayNum + 3);
-            let weekNum = 1 + Math.round((d - firstThursday) / (7 * 86400000));
-            return { year: d.getUTCFullYear(), week: weekNum };
-        }
-
-        function yearKeyOf(dateStr) {
-            return dateStr.slice(0, 4);
-        }
-        function monthKeyOf(dateStr) {
-            return dateStr.slice(0, 7); // "YYYY-MM"
-        }
-        function weekKeyOf(dateStr) {
-            let d = new Date(dateStr + "T00:00:00");
-            if (isNaN(d.getTime())) return null;
-            let p = getISOWeekParts_(d);
-            return p.year + "-W" + (p.week < 10 ? "0" + p.week : p.week);
-        }
-
-        // キーを時系列順に並べて、簡単な横棒グラフとして描画する
-        function renderTimeStats(targetId, countsObj, labelFormatter) {
-            let sortedKeys = Object.keys(countsObj).sort();
-            let el = document.getElementById(targetId);
-            if (sortedKeys.length === 0) {
-                el.innerHTML = "<div style='font-size:12px; color:var(--text-muted);'>訪問日が記録された駅がまだありません（マイ駅の編集モードで訪問日を入力すると集計されます）</div>";
-                return;
-            }
-            let maxVal = Math.max.apply(null, sortedKeys.map(k => countsObj[k]));
-            let html = sortedKeys.map(key => {
-                let val = countsObj[key];
-                let pct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
-                return `
-                    <div style="margin-bottom:6px;">
-                        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-main); margin-bottom:2px;">
-                            <span>${escapeHtml(labelFormatter(key))}</span>
-                            <span style="font-weight:bold;">${val}駅</span>
-                        </div>
-                        <div style="background:var(--glass-border); border-radius:4px; height:10px; overflow:hidden;">
-                            <div style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:${pct}%; border-radius:4px;"></div>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-            el.innerHTML = `<div style="grid-column: 1 / -1;">${html}</div>`;
-        }
-
-        function formatYearLabel(key) { return key + "年"; }
-        function formatMonthLabel(key) {
-            let parts = key.split("-");
-            return `${parts[0]}年${parseInt(parts[1], 10)}月`;
-        }
-        function formatWeekLabel(key) {
-            let parts = key.split("-W");
-            return `${parts[0]}年 第${parseInt(parts[1], 10)}週`;
-        }
-
         const renderStats = (targetId, countsObj, prefix = "", suffix = "", sortType = "default") => {
             let sortedKeys = Object.keys(countsObj);
 
@@ -3043,11 +2972,27 @@
             }
 
             if(sortedKeys.length === 0) {
-                document.getElementById(targetId).innerHTML = "<div>データがありません</div>";
+                document.getElementById(targetId).innerHTML = "<div style='font-size:12px; color:var(--text-muted);'>データがありません</div>";
                 return;
             }
-            let html = sortedKeys.map(key => `<div><strong>${escapeHtml(prefix)}${escapeHtml(key)}${escapeHtml(suffix)}:</strong> ${countsObj[key]}駅</div>`).join("");
-            document.getElementById(targetId).innerHTML = html;
+
+            let maxVal = Math.max.apply(null, sortedKeys.map(k => countsObj[k]));
+            let html = sortedKeys.map(key => {
+                let val = countsObj[key];
+                let pct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
+                return `
+                    <div style="margin-bottom:6px;">
+                        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-main); margin-bottom:2px;">
+                            <span>${escapeHtml(prefix)}${escapeHtml(key)}${escapeHtml(suffix)}</span>
+                            <span style="font-weight:bold;">${val}駅</span>
+                        </div>
+                        <div style="background:var(--glass-border); border-radius:4px; height:10px; overflow:hidden;">
+                            <div style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:${pct}%; border-radius:4px;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+            document.getElementById(targetId).innerHTML = `<div style="grid-column: 1 / -1;">${html}</div>`;
         };
 
         // 🌟 改善：マイ駅のローカル表示・ソート・統計データ生成を新旧データ対応に完全最適化
@@ -3062,9 +3007,6 @@
             let kanaEndCounts = {};
             let prefCounts = {};
             let companyCounts = {};
-            let yearCounts = {};
-            let monthCounts = {};
-            let weekCounts = {};
             
             let listData = [];
 
@@ -3072,7 +3014,6 @@
             let lookupList = allStations.concat(targetCustoms);
             let subNameOverrides = (allUserData[targetUser] && allUserData[targetUser].subNameOverrides) ? allUserData[targetUser].subNameOverrides : {};
             let stationEras = (allUserData[targetUser] && allUserData[targetUser].stationEras) ? allUserData[targetUser].stationEras : {};
-            let visitDates = (allUserData[targetUser] && allUserData[targetUser].visitDates) ? allUserData[targetUser].visitDates : {};
             let favoriteStations = (allUserData[targetUser] && allUserData[targetUser].favoriteStations) ? allUserData[targetUser].favoriteStations : [];
 
             myOwnNames.forEach(fullName => {
@@ -3112,23 +3053,10 @@
                 companyCounts[stationObj.company] = (companyCounts[stationObj.company] || 0) + 1;
 
                 let eraData = getStationEraData(stationEras, stationObj);
-                let visitDate = getVisitDate(visitDates, fullName, stationObj);
-
-                if (visitDate && visitDate !== VISITDATE_DISABLED_SENTINEL) {
-                    let yKey = yearKeyOf(visitDate);
-                    let mKey = monthKeyOf(visitDate);
-                    let wKey = weekKeyOf(visitDate);
-                    yearCounts[yKey] = (yearCounts[yKey] || 0) + 1;
-                    monthCounts[mKey] = (monthCounts[mKey] || 0) + 1;
-                    if (wKey) weekCounts[wKey] = (weekCounts[wKey] || 0) + 1;
-                }
 
                 let isFavorite = isStationInList(favoriteStations, stationObj) || favoriteStations.includes(fullName);
 
-                let visitDateDisabled = visitDate === VISITDATE_DISABLED_SENTINEL;
-                let displayVisitDate = visitDateDisabled ? "" : visitDate;
-
-                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName, eraData: eraData, visitDate: displayVisitDate, visitDateDisabled: visitDateDisabled, isFavorite: isFavorite });
+                listData.push({ ...stationObj, subName: effectiveSubName, officialSubName: stationObj.subName, subNameHidden: subNameHidden, fullName: fullName, eraData: eraData, isFavorite: isFavorite });
             });
 
             document.getElementById("ownCount").textContent = listData.length;
@@ -3176,9 +3104,6 @@
             renderGojuonTable("statsKanaEnd", kanaEndCounts);
             renderStats("statsPref", prefCounts, "", "", "pref");
             renderStats("statsCompany", companyCounts, "", "", "count");
-            renderTimeStats("statsYear", yearCounts, formatYearLabel);
-            renderTimeStats("statsMonth", monthCounts, formatMonthLabel);
-            renderTimeStats("statsWeek", weekCounts, formatWeekLabel);
 
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
             let displayList = [...listData]; 
@@ -3339,50 +3264,6 @@
                         infoDiv.appendChild(hideRow);
                     }
 
-                    // 🗓 訪問日の記録（副駅名の行とは分けて、誤タップを防ぐ）／各駅ごとに記録有無を選べる
-                    let visitRow = document.createElement("div");
-                    visitRow.style.cssText = "display:flex; align-items:center; gap:6px; margin-top:6px; touch-action: pan-y;";
-                    visitRow.onclick = (e) => e.stopPropagation();
-
-                    let visitLabel = document.createElement("span");
-                    visitLabel.textContent = "訪問日:";
-                    visitLabel.style.cssText = "font-size:11px; color:var(--text-muted); white-space:nowrap;";
-                    visitRow.appendChild(visitLabel);
-
-                    let visitInput = document.createElement("input");
-                    visitInput.type = "date";
-                    visitInput.value = item.visitDate || "";
-                    visitInput.style.cssText = "flex:1; min-width:0; padding:6px 8px; font-size:12px; border-radius:6px; background: var(--input-bg);";
-                    if (item.visitDateDisabled) visitInput.disabled = true;
-                    visitInput.onchange = () => updateVisitDate(item.fullName, visitInput.value);
-                    visitRow.appendChild(visitInput);
-
-                    infoDiv.appendChild(visitRow);
-
-                    let visitDisableRow = document.createElement("label");
-                    visitDisableRow.style.cssText = "display:flex; align-items:center; gap:5px; margin-top:4px; font-size:11px; color:var(--text-muted); cursor:pointer;";
-                    visitDisableRow.onclick = (e) => e.stopPropagation();
-
-                    let visitDisableCheckbox = document.createElement("input");
-                    visitDisableCheckbox.type = "checkbox";
-                    visitDisableCheckbox.checked = !!item.visitDateDisabled;
-                    visitDisableCheckbox.onchange = () => {
-                        if (visitDisableCheckbox.checked) {
-                            visitInput.value = "";
-                            visitInput.disabled = true;
-                            setVisitDateDisabled(item.fullName, true);
-                        } else {
-                            visitInput.disabled = false;
-                            setVisitDateDisabled(item.fullName, false);
-                        }
-                    };
-                    visitDisableRow.appendChild(visitDisableCheckbox);
-
-                    let visitDisableText = document.createElement("span");
-                    visitDisableText.textContent = "この駅の訪問日は記録しない";
-                    visitDisableRow.appendChild(visitDisableText);
-
-                    infoDiv.appendChild(visitDisableRow);
                 }
 
                 infoDiv.style.cursor = "pointer";
@@ -3413,41 +3294,6 @@
             } else {
                 database.ref(path).set(newValue.trim());
             }
-        }
-
-        // 🗓 訪問日の記録（YYYY-MM-DD）。"__NONE__" は「この駅は訪問日を記録しない」という明示的な指定
-        const VISITDATE_DISABLED_SENTINEL = "__NONE__";
-
-        function updateVisitDate(fullName, dateValue) {
-            let key = sanitizeKey(fullName);
-            let path = "users/" + currentUser + "/visitDates/" + key;
-            if (!dateValue) {
-                database.ref(path).remove();
-            } else {
-                database.ref(path).set(dateValue);
-            }
-        }
-
-        function setVisitDateDisabled(fullName, disabled) {
-            let key = sanitizeKey(fullName);
-            let path = "users/" + currentUser + "/visitDates/" + key;
-            if (disabled) {
-                database.ref(path).set(VISITDATE_DISABLED_SENTINEL);
-            } else {
-                database.ref(path).remove();
-            }
-        }
-
-        // 🌟 表記ゆれ（保存順の違い）に関わらず、訪問日を探す
-        function getVisitDate(visitDates, fullName, s) {
-            if (!visitDates) return "";
-            if (visitDates[sanitizeKey(fullName)] !== undefined) return visitDates[sanitizeKey(fullName)];
-            let variants = stationFullNameVariants(s);
-            for (let i = 0; i < variants.length; i++) {
-                let key = sanitizeKey(variants[i]);
-                if (visitDates[key] !== undefined) return visitDates[key];
-            }
-            return "";
         }
 
         // ⭐ お気に入りの追加・解除
@@ -3971,9 +3817,26 @@
         // 「マイ駅」モードでは、参加枠名と同じニックネームのユーザーの、マイ駅に登録された駅にしかピンを置けない
         // 🌟 保存されているマイ駅の文字列（旧会社名を含む場合がある）から、
         // 現在のデータベース上の駅オブジェクトを可能な限り特定する（会社移管・改称の救済用）
+        // 🚀 findStationByFullNameLoose の高速化用インデックス。
+        // 同じ list（配列の参照）が続けて渡される間はインデックスを使い回すことで、
+        // 「マイ駅の件数 × データベースの件数」の線形探索を「1回だけの索引作成＋O(1)引き」に変える。
+        let _stationIndexCache = { list: null, map: null };
+
+        function getStationIndex_(list) {
+            if (_stationIndexCache.list === list) return _stationIndexCache.map;
+            let map = new Map();
+            list.forEach(s => {
+                stationFullNameVariants(s).forEach(v => {
+                    if (!map.has(v)) map.set(v, s);
+                });
+            });
+            _stationIndexCache = { list: list, map: map };
+            return map;
+        }
+
         function findStationByFullNameLoose(fullName, list) {
             list = list || combinedStationsList;
-            let exact = list.find(s => stationFullNameVariants(s).includes(fullName));
+            let exact = getStationIndex_(list).get(fullName);
             if (exact) return exact;
 
             // 完全一致しない場合、駅名＋都道府県が一致する候補を緩く探す
@@ -4748,7 +4611,7 @@
             modal.classList.remove("active");
         }
 
-        // 👤 所持メンバーの詳細（副駅名・訪問日・お気に入り・変遷）を表示
+        // 👤 所持メンバーの詳細（副駅名・お気に入り・変遷）を表示
         function openOwnerDetailModal(uid, station) {
             let nickname = nickOf(uid);
             document.getElementById("ownerDetailTitle").textContent = `👤 ${nickname} さんの ${station.name}`;
@@ -4783,20 +4646,6 @@
                 addRow("副駅名（個人設定）", subInfo.value);
             } else if (station.subName) {
                 addRow("副駅名", station.subName + "（共通・個人設定なし）");
-            }
-
-            // 訪問日
-            let visitDates = userData.visitDates || {};
-            let visitDate = getVisitDate(visitDates, "", station);
-            // fullName不明な場合があるため、所持リストの中から実際の保存キーを探して再取得
-            let matchedFullName = ownStations.find(n => stationFullNameVariants(station).includes(n));
-            if (matchedFullName) {
-                visitDate = getVisitDate(visitDates, matchedFullName, station);
-            }
-            if (visitDate === VISITDATE_DISABLED_SENTINEL) {
-                addRow("訪問日", "（記録しない設定）");
-            } else if (visitDate) {
-                addRow("訪問日", visitDate);
             }
 
             // お気に入り
