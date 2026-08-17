@@ -9242,7 +9242,7 @@ const allStations = [
   { name: "吉富", kana: "よしとみ", pref: "京都府", company: "西日本旅客鉄道", line: "山陰本線", subName: "", note: "", lat: 35.092183, lng: 135.498725 },
   { name: "吉富", kana: "よしとみ", pref: "福岡県", company: "九州旅客鉄道", line: "日豊本線", subName: "", note: "", lat: 33.604836, lng: 131.1738 },
   { name: "吉名", kana: "よしな", pref: "広島県", company: "西日本旅客鉄道", line: "呉線", subName: "", note: "", lat: 34.320617, lng: 132.866175 },
-  { name: "吉永", kana: "よしなが", pref: "広島県", company: "西日本旅客鉄道", line: "山陽本線", subName: "", note: "", lat: 34.812259, lng: 134.204626 },
+  { name: "吉永", kana: "よしなが", pref: "岡山県", company: "西日本旅客鉄道", line: "山陽本線", subName: "", note: "", lat: 34.812259, lng: 134.204626 },
   { name: "吉成", kana: "よしなり", pref: "徳島県", company: "四国旅客鉄道", line: "高徳線", subName: "", note: "", lat: 34.118511, lng: 134.530744 },
   { name: "吉野", kana: "よしの", pref: "奈良県", company: "近畿日本鉄道", line: "吉野線", subName: "", note: "", lat: 34.376931, lng: 135.853508 },
   { name: "吉野", kana: "よしの", pref: "福岡県", company: "九州旅客鉄道", line: "鹿児島本線", subName: "", note: "", lat: 33.075817, lng: 130.466436 },
