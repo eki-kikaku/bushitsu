@@ -1504,6 +1504,24 @@
         </div>
     </div>
 
+    <!-- 🔧 マイ駅の紐付け修復モーダル -->
+    <div id="relinkModal" class="modal-overlay" onclick="closeRelinkModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>🔧 駅の紐付けを修正</span>
+                <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeRelinkModal(null)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="relinkOldNameText" style="margin:0 0 10px 0; font-size:12.5px; color:var(--text-muted);"></p>
+                <input type="text" id="relinkSearchInput" placeholder="正しい駅名で検索..." oninput="renderRelinkCandidates()" style="width:100%; box-sizing:border-box; padding:8px 12px; font-size:14px; margin-bottom:10px;">
+                <ul id="relinkCandidatesList" style="margin:0;"></ul>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeRelinkModal(null)">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDqYW1NqxeVFHGi_b0BqP3bO2RBvHKwlV8",
@@ -1531,6 +1549,7 @@
 
         const PAGE_SIZE = 100;
         let lastSearchResults = [];
+        let hasSearchedOnce = false;
         let searchCurrentPage = 1;
         let myOwnCurrentPage = 1;
 
@@ -1898,6 +1917,9 @@
                             updateUserSelect();
                             updateSearchMemberFilters();
                             updateOwnList(true);
+                            // 🌟 検索結果の「マイ駅」ボタンなどが、追加直後に「登録済」へ反映されるように再描画する
+                            // （ページ位置・検索条件はそのまま、表示だけを最新状態に更新）
+                            if (hasSearchedOnce) renderSearchResultsPage();
                         }
                     });
                 } else {
@@ -2744,6 +2766,7 @@
             });
 
             lastSearchResults = results;
+            hasSearchedOnce = true;
             searchCurrentPage = 1;
             renderSearchResultsPage();
         }
@@ -2955,7 +2978,7 @@
             }).catch(() => { alert("コピーに失敗しました。"); });
         }
 
-        const renderStats = (targetId, countsObj, prefix = "", suffix = "", sortType = "default") => {
+        const renderStats = (targetId, countsObj, prefix = "", suffix = "", sortType = "default", totalsObj = null) => {
             let sortedKeys = Object.keys(countsObj);
 
             if (sortType === "default") {
@@ -2976,18 +2999,20 @@
                 return;
             }
 
-            let maxVal = Math.max.apply(null, sortedKeys.map(k => countsObj[k]));
             let html = sortedKeys.map(key => {
                 let val = countsObj[key];
-                let pct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
+                let total = totalsObj ? (totalsObj[key] || val) : null;
+                let pct = total ? Math.round((val / total) * 100) : 0;
+                let barPct = total ? Math.min(100, Math.round((val / total) * 100)) : 0;
+                let countLabel = total ? `${val}/${total}駅（${pct}%）` : `${val}駅`;
                 return `
                     <div style="margin-bottom:6px;">
                         <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-main); margin-bottom:2px;">
                             <span>${escapeHtml(prefix)}${escapeHtml(key)}${escapeHtml(suffix)}</span>
-                            <span style="font-weight:bold;">${val}駅</span>
+                            <span style="font-weight:bold;">${countLabel}</span>
                         </div>
                         <div style="background:var(--glass-border); border-radius:4px; height:10px; overflow:hidden;">
-                            <div style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:${pct}%; border-radius:4px;"></div>
+                            <div style="background:linear-gradient(90deg, var(--primary), var(--accent)); height:100%; width:${barPct}%; border-radius:4px;"></div>
                         </div>
                     </div>
                 `;
@@ -3030,7 +3055,7 @@
                     let company = parts[0] || "";
                     let pref = parts[1] || "不明";
 
-                    stationObj = { name: name, company: company, kana: "", pref: pref, line: "", subName: "" };
+                    stationObj = { name: name, company: company, kana: "", pref: pref, line: "", subName: "", notFound: true };
                 }
 
                 let overrideKey = sanitizeKey(fullName);
@@ -3102,8 +3127,17 @@
 
             renderGojuonTable("statsKana", kanaCounts);
             renderGojuonTable("statsKanaEnd", kanaEndCounts);
-            renderStats("statsPref", prefCounts, "", "", "pref");
-            renderStats("statsCompany", companyCounts, "", "", "count");
+
+            // 🌟 都道府県・鉄道会社ごとの「データベース全体の駅数」を集計し、所持割合（％）を出せるようにする
+            let totalPrefCounts = {};
+            let totalCompanyCounts = {};
+            combinedStationsList.forEach(s => {
+                totalPrefCounts[s.pref] = (totalPrefCounts[s.pref] || 0) + 1;
+                totalCompanyCounts[s.company] = (totalCompanyCounts[s.company] || 0) + 1;
+            });
+
+            renderStats("statsPref", prefCounts, "", "", "pref", totalPrefCounts);
+            renderStats("statsCompany", companyCounts, "", "", "count", totalCompanyCounts);
 
             let keyword = document.getElementById("myOwnSearchInput").value.trim().toLowerCase();
             let displayList = [...listData]; 
@@ -3147,7 +3181,12 @@
 
                 let pKana = document.createElement("span");
                 pKana.className = "station-kana";
-                pKana.textContent = item.kana || "（ふりがな不明）";
+                if (item.notFound) {
+                    pKana.textContent = "⚠️ データベースに見つかりません";
+                    pKana.style.color = "#ef4444";
+                } else {
+                    pKana.textContent = item.kana || "（ふりがな不明）";
+                }
                 infoDiv.appendChild(pKana);
 
                 let nameRow = document.createElement("div");
@@ -3207,6 +3246,21 @@
                 }
 
                 if (isEditMode && targetUser === currentUser) {
+                    if (item.notFound) {
+                        let repairRow = document.createElement("div");
+                        repairRow.style.cssText = "margin-top:8px;";
+                        repairRow.onclick = (e) => e.stopPropagation();
+
+                        let repairBtn = document.createElement("button");
+                        repairBtn.textContent = "🔧 正しい駅と紐付け直す";
+                        repairBtn.className = "own-btn";
+                        repairBtn.style.cssText = "width:100%; background-color:#ef4444; color:#fff;";
+                        repairBtn.onclick = () => openRelinkModal(item.fullName, item.name);
+                        repairRow.appendChild(repairBtn);
+
+                        infoDiv.appendChild(repairRow);
+                    }
+
                     let subEditRow = document.createElement("div");
                     subEditRow.style.cssText = "display:flex; align-items:center; gap:6px; margin-top:8px; touch-action: pan-y;";
 
@@ -4678,6 +4732,102 @@
 
         function closeOwnerDetailModal(e) {
             document.getElementById("ownerDetailModal").classList.remove("active");
+        }
+
+        // 🔧 マイ駅の紐付け修復（駅名・都道府県の変更でデータベースと一致しなくなったエントリを直す）
+        let currentRelinkOldFullName = null;
+
+        function openRelinkModal(oldFullName, guessedName) {
+            currentRelinkOldFullName = oldFullName;
+            document.getElementById("relinkOldNameText").innerHTML = `保存されている情報: 「${escapeHtml(oldFullName)}」<br>データベース上の名前・都道府県・鉄道会社が変わった可能性があります。正しい駅を検索して選び直してください。`;
+            document.getElementById("relinkSearchInput").value = guessedName || "";
+            renderRelinkCandidates();
+            document.getElementById("relinkModal").classList.add("active");
+        }
+
+        function closeRelinkModal(e) {
+            document.getElementById("relinkModal").classList.remove("active");
+            currentRelinkOldFullName = null;
+        }
+
+        function renderRelinkCandidates() {
+            let keyword = normalizeKanjiVariants(document.getElementById("relinkSearchInput").value.trim()).toLowerCase();
+            let listEl = document.getElementById("relinkCandidatesList");
+            listEl.innerHTML = "";
+
+            if (keyword === "") {
+                listEl.innerHTML = '<li style="font-size:12.5px; color:var(--text-muted); list-style:none;">駅名を入力して検索してください。</li>';
+                return;
+            }
+
+            let candidates = combinedStationsList.filter(s => {
+                return normalizeKanjiVariants(s.name).toLowerCase().includes(keyword) ||
+                       normalizeKanjiVariants(s.kana || "").toLowerCase().includes(keyword);
+            }).slice(0, 30);
+
+            if (candidates.length === 0) {
+                listEl.innerHTML = '<li style="font-size:12.5px; color:var(--text-muted); list-style:none;">見つかりませんでした。</li>';
+                return;
+            }
+
+            candidates.forEach(s => {
+                let li = document.createElement("li");
+                li.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); padding:8px 10px; border-radius:8px; margin-bottom:6px; list-style:none; cursor:pointer;";
+                li.onclick = () => confirmRelink(s);
+
+                let infoSpan = document.createElement("div");
+                infoSpan.style.cssText = "font-size:13px;";
+                infoSpan.innerHTML = `<b>${escapeHtml(s.name)}</b><br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(s.pref)} ${escapeHtml(s.company)} ${escapeHtml(s.line || "")}</span>`;
+                li.appendChild(infoSpan);
+
+                let selectSpan = document.createElement("span");
+                selectSpan.textContent = "選ぶ →";
+                selectSpan.style.cssText = "font-size:11.5px; color:var(--primary-dark); flex-shrink:0;";
+                li.appendChild(selectSpan);
+
+                listEl.appendChild(li);
+            });
+        }
+
+        function confirmRelink(newStation) {
+            if (!currentUser || !currentRelinkOldFullName) return;
+            let oldFullName = currentRelinkOldFullName;
+            let newFullName = makeStationFullName(newStation);
+
+            if (!confirm(`マイ駅の登録を「${newFullName}」に紐付け直しますか？`)) return;
+
+            let myOwnStations = getOwnStationsArray(currentUser).map(n => n === oldFullName ? newFullName : n);
+
+            let updates = { myOwnStations: myOwnStations };
+
+            // 副駅名の個人設定・変遷情報・お気に入りのキーも新しい表記に引き継ぐ
+            let oldKey = sanitizeKey(oldFullName);
+            let newKey = sanitizeKey(newFullName);
+
+            let overrides = (allUserData[currentUser] && allUserData[currentUser].subNameOverrides) ? { ...allUserData[currentUser].subNameOverrides } : {};
+            if (overrides[oldKey] !== undefined) {
+                overrides[newKey] = overrides[oldKey];
+                delete overrides[oldKey];
+                updates.subNameOverrides = overrides;
+            }
+
+            let eras = (allUserData[currentUser] && allUserData[currentUser].stationEras) ? { ...allUserData[currentUser].stationEras } : {};
+            if (eras[oldKey] !== undefined) {
+                eras[newKey] = eras[oldKey];
+                delete eras[oldKey];
+                updates.stationEras = eras;
+            }
+
+            let favorites = (allUserData[currentUser] && allUserData[currentUser].favoriteStations) ? [...allUserData[currentUser].favoriteStations] : [];
+            if (favorites.includes(oldFullName)) {
+                updates.favoriteStations = favorites.map(n => n === oldFullName ? newFullName : n);
+            }
+
+            database.ref("users/" + currentUser).update(updates).then(() => {
+                alert("紐付けを修正しました！");
+                closeRelinkModal(null);
+                updateOwnList(true);
+            });
         }
 
         // 🕰 名称・会社の変遷（旧名）モーダル
