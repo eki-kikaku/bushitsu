@@ -9030,7 +9030,7 @@ const allStations = [
   { name: "矢部", kana: "やべ", pref: "神奈川県", company: "東日本旅客鉄道", line: "横浜線", subName: "", note: "", lat: 35.573275, lng: 139.386373 },
   { name: "谷保", kana: "やほ", pref: "東京都", company: "東日本旅客鉄道", line: "南武線", subName: "", note: "", lat: 35.681417, lng: 139.446583 },
   { name: "山岡", kana: "やまおか", pref: "岐阜県", company: "明知鉄道", line: "明知線", subName: "", note: "", lat: 35.350133, lng: 137.395667 },
-  { name: "山家", kana: "やまが", pref: "兵庫県", company: "西日本旅客鉄道", line: "山陰本線", subName: "", note: "", lat: 35.29379, lng: 135.318618 },
+  { name: "山家", kana: "やまが", pref: "京都府", company: "西日本旅客鉄道", line: "山陰本線", subName: "", note: "", lat: 35.29379, lng: 135.318618 },
   { name: "山形", kana: "やまがた", pref: "山形県", company: "東日本旅客鉄道", line: "奥羽本線", subName: "", note: "", lat: 38.248708, lng: 140.327456 },
   { name: "山方宿", kana: "やまがたじゅく", pref: "茨城県", company: "東日本旅客鉄道", line: "水郡線", subName: "", note: "", lat: 36.624583, lng: 140.40125 },
   { name: "山川", kana: "やまかわ", pref: "鹿児島県", company: "九州旅客鉄道", line: "指宿枕崎線", subName: "", note: "", lat: 31.211361, lng: 130.629811 },
