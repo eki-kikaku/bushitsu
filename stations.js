@@ -5342,7 +5342,7 @@ const allStations = [
   { name: "田野", kana: "たの", pref: "高知県", company: "土佐くろしお鉄道", line: "阿佐線", subName: "", note: "", lat: 33.430333, lng: 134.008167 },
   { name: "田野", kana: "たの", pref: "宮崎県", company: "九州旅客鉄道", line: "日豊本線", subName: "", note: "", lat: 31.837833, lng: 131.304861 },
   { name: "たのうら御立岬公園", kana: "たのうらおたちみさきこうえん", pref: "熊本県", company: "肥薩おれんじ鉄道", line: "肥薩おれんじ鉄道線", subName: "", note: "", lat: 32.363264, lng: 130.506614 },
-  { name: "田野口", kana: "たのくち", pref: "静岡県", company: "大井川鐵道", line: "大井川本線", subName: "", note: "", lat: 35.051333, lng: 138.095444 },
+  { name: "田野口", kana: "たのくち", pref: "静岡県", company: "大井川鐵道", line: "大井川本線", subName: "", note: "長期休止中", lat: 35.051333, lng: 138.095444 },
   { name: "田窪", kana: "たのくぼ", pref: "愛媛県", company: "伊予鉄道", line: "横河原線", subName: "", note: "", lat: 33.792972, lng: 132.865428 },
   { name: "田野倉", kana: "たのくら", pref: "山梨県", company: "富士山麓電気鉄道", line: "大月線", subName: "", note: "", lat: 35.59315, lng: 138.931172 },
   { name: "田野畑", kana: "たのはた", pref: "岩手県", company: "三陸鉄道", line: "北リアス線", subName: "", note: "", lat: 39.934011, lng: 141.934036 },
