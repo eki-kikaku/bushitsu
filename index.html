@@ -886,7 +886,7 @@
                 <p id="authHintText" style="margin: 0 0 10px 0; font-size: 13.5px; color: var(--text-muted); text-align: center;">メールアドレスとパスワードでログインしてね！</p>
 
                 <div id="authNicknameGroup" class="hidden input-group">
-                    <input type="text" id="nicknameInput" placeholder="ニックネーム（他の人に表示される名前）">
+                    <input type="text" id="nicknameInput" placeholder="ニックネーム（他の人に表示される名前）" maxlength="10">
                 </div>
 
                 <div class="input-group">
@@ -991,13 +991,13 @@
 
         <!-- マイ駅リストページ -->
         <div id="pageMyList" class="page-content">
-            <div class="bento-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 20px;">🌟</span>
-                    <select id="userSelect" onchange="changeViewedUser()" style="padding: 6px 12px; font-size: 15px; border: 1px solid var(--primary); border-radius: 8px; background: var(--input-bg); font-weight: bold; color: var(--primary-dark); width: auto; cursor: pointer;"></select>
-                    <span style="font-size: 14px; white-space: nowrap; color: var(--text-muted);">(<span id="ownCount" style="color: var(--text-main); font-weight: bold;">0</span>駅)</span>
+            <div class="bento-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 14px 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                    <span style="font-size: 20px; flex-shrink: 0;">🌟</span>
+                    <select id="userSelect" onchange="changeViewedUser()" style="padding: 6px 12px; font-size: 15px; border: 1px solid var(--primary); border-radius: 8px; background: var(--input-bg); font-weight: bold; color: var(--primary-dark); max-width: 100%; min-width: 0; cursor: pointer;"></select>
+                    <span style="font-size: 14px; white-space: nowrap; color: var(--text-muted); flex-shrink: 0;">(<span id="ownCount" style="color: var(--text-main); font-weight: bold;">0</span>駅)</span>
                 </div>
-                <button id="editToggleBtn" class="edit-toggle-btn action-btn" style="width: auto; padding: 6px 14px; font-size: 12.5px;" onclick="toggleEditMode()">⚙️ 編集</button>
+                <button id="editToggleBtn" class="edit-toggle-btn action-btn" style="width: auto; padding: 6px 14px; font-size: 12.5px; flex-shrink: 0; margin-left: auto;" onclick="toggleEditMode()">⚙️ 編集</button>
             </div>
 
             <details id="copySectionDetails" style="margin-bottom: 15px;" class="bento-card">
@@ -1112,6 +1112,15 @@
                     <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
                 </div>
                 </div>
+                </details>
+
+                <details style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
+                    <summary style="color: #7c3aed; font-size: 12.5px; font-weight: bold;">📋 後出し用リスト作成（履歴を貼り付け）</summary>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 8px 0;">「「木」「野」「山」」のような履歴テキストを貼り付けると、それぞれの文字を含む自分のマイ駅から候補を自動で1つ選んでリスト化します。プルダウンで手動に選び直すこともできます。</p>
+                    <textarea id="submissionPasteInput" rows="3" placeholder="「木」「野」「山」「川」「下」" style="padding: 8px; font-size: 12.5px; width: 100%; box-sizing: border-box; border-radius: 8px;"></textarea>
+                    <button onclick="generateSubmissionList()" class="action-btn" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">リストを作成</button>
+                    <div id="submissionListContainer" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;"></div>
+                    <button id="copySubmissionListBtn" onclick="copySubmissionList()" class="action-btn" style="display:none; margin-top: 8px; width: 100%; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);">📋 リストをコピー</button>
                 </details>
             </div>
 
@@ -1371,6 +1380,14 @@
                 <button id="customStationCancelEditBtn" onclick="cancelEditCustomStation()" class="action-btn" style="display:none; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); margin-top: 8px; width: 100%;">編集をキャンセル</button>
 
                 <details style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
+                    <summary style="color: #e67e22; font-size: 12.5px; font-weight: bold;">✍️ テキストで一括追加</summary>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 8px 0;">1行に1駅、「都道府県　鉄道会社　路線　駅名　ふりがな　備考」の順で入力してください（スプレッドシートの行をそのままコピペでもOK・タブ区切り／全角スペース区切りどちらも対応。備考は空欄でも可）。</p>
+                    <textarea id="bulkCustomInput" rows="5" placeholder="岐阜県　長良川鉄道　越美南線　相生　あいおい&#10;兵庫県　西日本旅客鉄道　山陽新幹線／山陽本線／赤穂線　相生　あいおい" style="padding: 8px; font-size: 12.5px; width: 100%; box-sizing: border-box; border-radius: 8px;"></textarea>
+                    <button onclick="addBulkCustomStations()" class="action-btn" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;">この内容で一括登録</button>
+                    <div id="bulkCustomReport" style="margin-top: 8px; font-size: 11.5px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
+                </details>
+
+                <details style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
                     <summary style="color: var(--text-muted); font-size: 12.5px;">登録済みの独自カスタム駅</summary>
                     <ul id="myCustomStationsList" style="margin-top: 8px;"></ul>
                 </details>
@@ -1379,7 +1396,7 @@
             <h2>🛠 アカウント情報編集</h2>
             <div class="bento-card">
                 <p style="margin:0 0 6px 0; font-weight:bold; color:var(--primary-dark); font-size:14px;">ニックネームの変更</p>
-                <input type="text" id="newUsernameInput" placeholder="新しいニックネーム" style="margin-bottom: 8px;">
+                <input type="text" id="newUsernameInput" placeholder="新しいニックネーム" maxlength="10" style="margin-bottom: 8px;">
                 <button onclick="changeUsername()" class="action-btn" style="width: 100%;">ニックネームを変更</button>
             </div>
 
@@ -1714,6 +1731,36 @@
             if (groupA === 1) return a.localeCompare(b, 'en', { sensitivity: 'base' }); // A→Z
             if (groupA === 2) return a.localeCompare(b, 'ko'); // ㄱ→ㅎ
             return a.localeCompare(b, 'ja'); // 五十音
+        }
+
+        // 🌟 駅名表記ゆれ（異体字・旧字体・IVS）を吸収するための正規化。
+        // 「塚／塚」「髙／高」「﨑／崎」「辻／辻󠄀（異体字セレクタ付き）」など、
+        // 環境によって入力・表示できる字が違う駅名でも、検索・登録のどちらの字を使ってもヒットするようにする。
+        // 1. 異体字セレクタ（IVS/VS）を除去 → 見た目は違っても土台の文字コードを揃える
+        // 2. Unicode正規化（NFKC）でCJK互換漢字（例: 塚→塚）を自動的に統一
+        // 3. NFKCではカバーされない代表的な異体字・旧字体を手動テーブルで追加吸収
+        const KANJI_VARIANT_MAP = {
+            "髙": "高", "﨑": "崎", "德": "徳", "濵": "浜", "濱": "浜", "澤": "沢",
+            "廣": "広", "惠": "恵", "齋": "斎", "齊": "斉", "櫻": "桜", "龍": "竜",
+            "靜": "静", "眞": "真", "峯": "峰", "條": "条", "澁": "渋", "增": "増",
+            "邊": "辺", "邉": "辺", "榮": "栄", "國": "国", "學": "学", "藝": "芸",
+            "醫": "医", "圓": "円", "團": "団", "拂": "払", "樣": "様", "應": "応",
+            "從": "従", "戶": "戸", "淵": "淵", "萬": "万", "彌": "弥", "槇": "槙",
+            "禰": "祢", "曾": "曽", "簞": "箪", "屛": "屏", "麴": "麹", "萊": "莱",
+            "ヶ": "ケ", "薗": "園", "祉": "社", "壺": "壷", "堯": "尭", "槪": "概"
+        };
+
+        function normalizeKanjiVariants(str) {
+            if (!str) return "";
+            // 異体字セレクタ（U+FE00-FE0F、U+E0100-E01EF）を除去
+            let stripped = str.replace(/[\uFE00-\uFE0F]|[\u{E0100}-\u{E01EF}]/gu, "");
+            let normalized = stripped.normalize("NFKC");
+            let result = "";
+            for (let i = 0; i < normalized.length; i++) {
+                let ch = normalized.charAt(i);
+                result += KANJI_VARIANT_MAP[ch] || ch;
+            }
+            return result;
         }
 
         function normalizeToGojuon(char) {
@@ -2188,6 +2235,7 @@
             let email = document.getElementById("emailInput").value.trim();
             let pass = document.getElementById("passwordInput").value.trim();
             if (nickname === "" || email === "" || pass === "") { alert("すべて入力してね！"); return; }
+            if (nickname.length > 10) { alert("ニックネームは10文字以内にしてください！"); return; }
 
             auth.createUserWithEmailAndPassword(email, pass)
                 .then((cred) => {
@@ -2388,6 +2436,151 @@
             document.getElementById("customNote").value = "";
             document.getElementById("customStationSubmitBtn").textContent = "この駅をデータベースに登録";
             document.getElementById("customStationCancelEditBtn").style.display = "none";
+        }
+
+        // ✍️ データベース未登録駅をテキストで一括登録する
+        function addBulkCustomStations() {
+            let raw = document.getElementById("bulkCustomInput").value;
+            let lines = raw.split("\n").map(l => l.trim()).filter(l => l !== "");
+            let reportEl = document.getElementById("bulkCustomReport");
+
+            if (lines.length === 0) {
+                reportEl.textContent = "入力がありません。";
+                return;
+            }
+
+            let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
+            let myOwnStations = [...getOwnStationsArray(currentUser)];
+
+            let allOtherCustoms = [];
+            Object.keys(allUserData).forEach(uid => {
+                let customs = (allUserData[uid] && allUserData[uid].customStations) ? allUserData[uid].customStations : [];
+                allOtherCustoms = allOtherCustoms.concat(customs);
+            });
+
+            let reportLines = [];
+
+            lines.forEach(line => {
+                // タブ区切り優先（スプレッドシートからのコピペを想定）、なければ半角/全角スペースの連続で分割
+                let parts = line.includes("\t") ? line.split("\t") : line.split(/[ 　]+/);
+                parts = parts.map(p => p.trim());
+
+                let [pref, company, lineName, name, kana, note] = parts;
+                pref = pref || ""; company = company || ""; lineName = lineName || "";
+                name = name || ""; kana = kana || ""; note = note || "";
+
+                if (!pref || !company || !lineName || !name || !kana) {
+                    reportLines.push(`❌ 【項目不足】「${line}」（都道府県・鉄道会社・路線・駅名・ふりがなが必要です）`);
+                    return;
+                }
+
+                let normName = normalizeKanjiVariants(name);
+                let existingMatch = allOtherCustoms.find(s => normalizeKanjiVariants(s.name) === normName && s.company === company) ||
+                                     allStations.find(s => normalizeKanjiVariants(s.name) === normName && s.company === company) ||
+                                     myCustoms.find(s => normalizeKanjiVariants(s.name) === normName && s.company === company);
+
+                if (existingMatch) {
+                    reportLines.push(`⚠️ 【重複】${name}（${existingMatch.pref}・${existingMatch.company}）は既に登録されています。`);
+                    return;
+                }
+
+                let newStation = { pref: pref, company: company, line: lineName, name: name, kana: kana, note: note };
+                myCustoms.push(newStation);
+
+                let fullName = `${name}（${company}・${pref}）`;
+                if (!myOwnStations.includes(fullName)) myOwnStations.push(fullName);
+
+                reportLines.push(`✅ 【登録】${name}（${pref}・${company}）`);
+            });
+
+            reportEl.textContent = reportLines.join("\n");
+
+            database.ref("users/" + currentUser).update({
+                customStations: myCustoms,
+                myOwnStations: myOwnStations
+            }).then(() => {
+                document.getElementById("bulkCustomInput").value = "";
+                renderMyCustomStations();
+            });
+        }
+
+        // 📋 文字企画の履歴テキストから「後出し」用の提出リストを自動生成する
+        function generateSubmissionList() {
+            let text = document.getElementById("submissionPasteInput").value;
+            let matches = [...text.matchAll(/「(.+?)」/g)].map(m => m[1]);
+            // 重複する文字はまとめる
+            let chars = [...new Set(matches)];
+
+            let container = document.getElementById("submissionListContainer");
+            container.innerHTML = "";
+
+            if (chars.length === 0) {
+                alert("「」で囲まれた文字が見つかりませんでした。貼り付ける文章を確認してください。");
+                document.getElementById("copySubmissionListBtn").style.display = "none";
+                return;
+            }
+
+            refreshCombinedStations();
+            let myOwnStations = getOwnStationsArray(currentUser);
+            let myOwnStationObjs = myOwnStations
+                .map(fullName => findStationByFullNameLoose(fullName, combinedStationsList))
+                .filter(s => s !== null);
+
+            chars.forEach(ch => {
+                let normCh = normalizeKanjiVariants(ch);
+                let candidates = myOwnStationObjs.filter(s => normalizeKanjiVariants(s.name).includes(normCh));
+
+                let row = document.createElement("div");
+                row.style.cssText = "display:flex; align-items:center; gap:8px;";
+
+                let label = document.createElement("span");
+                label.textContent = `「${ch}」`;
+                label.style.cssText = "font-size:13px; font-weight:bold; color:var(--text-main); flex-shrink:0; width:36px;";
+                row.appendChild(label);
+
+                let select = document.createElement("select");
+                select.className = "submission-select";
+                select.dataset.char = ch;
+                select.style.cssText = "flex:1; min-width:0; padding:6px 8px; font-size:12.5px;";
+
+                if (candidates.length === 0) {
+                    let opt = document.createElement("option");
+                    opt.value = "";
+                    opt.textContent = "（候補が見つかりませんでした）";
+                    select.appendChild(opt);
+                    select.disabled = true;
+                } else {
+                    candidates.forEach(s => {
+                        let opt = document.createElement("option");
+                        opt.value = `${s.name}（${s.pref}・${s.company}）`;
+                        opt.textContent = `${s.name}（${s.pref}・${s.company}）`;
+                        select.appendChild(opt);
+                    });
+                    // 自動でランダムに1つ選んでおく（手動で選び直し可能）
+                    select.selectedIndex = Math.floor(Math.random() * candidates.length);
+                }
+                row.appendChild(select);
+
+                container.appendChild(row);
+            });
+
+            document.getElementById("copySubmissionListBtn").style.display = "block";
+        }
+
+        function copySubmissionList() {
+            let selects = document.querySelectorAll("#submissionListContainer .submission-select");
+            let lines = Array.from(selects).map(s => s.value).filter(v => v !== "");
+
+            if (lines.length === 0) {
+                alert("コピーできる候補がありません。");
+                return;
+            }
+
+            navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                alert("提出用リストをコピーしました！");
+            }).catch(() => {
+                alert("コピーに失敗しました。");
+            });
         }
 
         function renderMyCustomStations() {
@@ -3351,6 +3544,7 @@
         function changeUsername() {
             let newNickname = document.getElementById("newUsernameInput").value.trim();
             if (newNickname === "") { alert("新しいニックネームを入力してください！"); return; }
+            if (newNickname.length > 10) { alert("ニックネームは10文字以内にしてください！"); return; }
             if (allUserData[currentUser] && newNickname === allUserData[currentUser].nickname) { alert("今と同じニックネームです！"); return; }
 
             database.ref("users/" + currentUser + "/nickname").set(newNickname)
