@@ -1365,7 +1365,7 @@
                     <input type="text" id="customLine" placeholder="路線">
                     <input type="text" id="customName" placeholder="駅名">
                     <input type="text" id="customKana" placeholder="ふりがな">
-                    <input type="text" id="customNote" placeholder="備考">
+                    <input type="text" id="customNote" placeholder="備考（任意）">
                 </div>
                 <button id="customStationSubmitBtn" onclick="registerCustomStation()" class="action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; margin-top: 8px; width: 100%;">この駅をデータベースに登録</button>
                 <button id="customStationCancelEditBtn" onclick="cancelEditCustomStation()" class="action-btn" style="display:none; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); margin-top: 8px; width: 100%;">編集をキャンセル</button>
@@ -1902,6 +1902,7 @@
                     viewedUser = user.uid;
 
                     let isFirstSnapshot = true;
+                    let renderDebounceTimer = null;
                     database.ref("users").off();
                     database.ref("users").on("value", (snapshot) => {
                         allUserData = snapshot.val() || {};
@@ -1910,13 +1911,16 @@
                             showLoggedInUI();
                             switchPage('search');
                         } else {
-                            refreshCombinedStations();
-                            updateUserSelect();
-                            updateSearchMemberFilters();
-                            updateOwnList(true);
-                            // 🌟 検索結果の「マイ駅」ボタンなどが、追加直後に「登録済」へ反映されるように再描画する
-                            // （ページ位置・検索条件はそのまま、表示だけを最新状態に更新）
-                            if (hasSearchedOnce) renderSearchResultsPage();
+                            // 🌟 短時間に何度も更新が来た場合にまとめて処理する（連続描画でボタン操作が
+                            // 取りこぼされるのを防ぐため、少しだけ待ってから1回だけ再描画する）
+                            if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+                            renderDebounceTimer = setTimeout(() => {
+                                refreshCombinedStations();
+                                updateUserSelect();
+                                updateSearchMemberFilters();
+                                updateOwnList(true);
+                                if (hasSearchedOnce) renderSearchResultsPage();
+                            }, 250);
                         }
                     });
                 } else {
@@ -2256,24 +2260,11 @@
             let line = document.getElementById("customLine").value.trim();
             let name = document.getElementById("customName").value.trim();
             let kana = document.getElementById("customKana").value.trim();
-            let sub = document.getElementById("customSub").value.trim();
             let note = document.getElementById("customNote").value.trim();
-            let latRaw = document.getElementById("customLat").value.trim();
-            let lngRaw = document.getElementById("customLng").value.trim();
 
             if (pref === "" || company === "" || line === "" || name === "" || kana === "") {
-                alert("「副駅名」「備考」「緯度」「経度」以外をもれなく入力してね！");
+                alert("「備考」以外をもれなく入力してね！");
                 return;
-            }
-
-            let lat = null, lng = null;
-            if (latRaw !== "" || lngRaw !== "") {
-                lat = parseFloat(latRaw);
-                lng = parseFloat(lngRaw);
-                if (isNaN(lat) || isNaN(lng)) {
-                    alert("緯度・経度は数値（10進法）で入力してください（例：34.7503）。片方だけの入力はできません。");
-                    return;
-                }
             }
 
             let myCustoms = (allUserData[currentUser] && allUserData[currentUser].customStations) ? [...allUserData[currentUser].customStations] : [];
@@ -2294,7 +2285,7 @@
                     return;
                 }
 
-                let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note, lat: lat, lng: lng };
+                let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, note: note };
                 let myOwnStations = [...getOwnStationsArray(currentUser)];
                 let oldVariants = stationFullNameVariants(oldStation);
                 let matchedOldName = myOwnStations.find(n => oldVariants.includes(n));
@@ -2343,7 +2334,7 @@
                 return;
             }
 
-            let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, subName: sub, note: note, lat: lat, lng: lng };
+            let newStation = { pref: pref, company: company, line: line, name: name, kana: kana, note: note };
             myCustoms.push(newStation);
 
             // 🌟 同名駅完全識別のために、ここでも都道府県を補完したフォーマットを適用
@@ -2361,10 +2352,7 @@
                 document.getElementById("customLine").value = "";
                 document.getElementById("customName").value = "";
                 document.getElementById("customKana").value = "";
-                document.getElementById("customSub").value = "";
                 document.getElementById("customNote").value = "";
-                document.getElementById("customLat").value = "";
-                document.getElementById("customLng").value = "";
                 alert("「" + name + "」を登録しました！");
                 renderMyCustomStations();
             });
@@ -2382,10 +2370,7 @@
             document.getElementById("customLine").value = target.line || "";
             document.getElementById("customName").value = target.name || "";
             document.getElementById("customKana").value = target.kana || "";
-            document.getElementById("customSub").value = target.subName || "";
             document.getElementById("customNote").value = target.note || "";
-            document.getElementById("customLat").value = (target.lat !== null && target.lat !== undefined) ? target.lat : "";
-            document.getElementById("customLng").value = (target.lng !== null && target.lng !== undefined) ? target.lng : "";
 
             document.getElementById("customStationSubmitBtn").textContent = "この駅の情報を更新する";
             document.getElementById("customStationCancelEditBtn").style.display = "block";
@@ -2400,10 +2385,7 @@
             document.getElementById("customLine").value = "";
             document.getElementById("customName").value = "";
             document.getElementById("customKana").value = "";
-            document.getElementById("customSub").value = "";
             document.getElementById("customNote").value = "";
-            document.getElementById("customLat").value = "";
-            document.getElementById("customLng").value = "";
             document.getElementById("customStationSubmitBtn").textContent = "この駅をデータベースに登録";
             document.getElementById("customStationCancelEditBtn").style.display = "none";
         }
@@ -3252,7 +3234,14 @@
                         repairBtn.textContent = "🔧 正しい駅と紐付け直す";
                         repairBtn.className = "own-btn";
                         repairBtn.style.cssText = "width:100%; background-color:#ef4444; color:#fff;";
-                        repairBtn.onclick = () => openRelinkModal(item.fullName, item.name);
+                        repairBtn.onclick = () => {
+                            try {
+                                openRelinkModal(item.fullName, item.name);
+                            } catch (err) {
+                                console.error(err);
+                                alert("エラーが発生しました：" + (err && err.message ? err.message : err));
+                            }
+                        };
                         repairRow.appendChild(repairBtn);
 
                         infoDiv.appendChild(repairRow);
@@ -4736,10 +4725,20 @@
 
         function openRelinkModal(oldFullName, guessedName) {
             currentRelinkOldFullName = oldFullName;
-            document.getElementById("relinkOldNameText").innerHTML = `保存されている情報: 「${escapeHtml(oldFullName)}」<br>データベース上の名前・都道府県・鉄道会社が変わった可能性があります。正しい駅を検索して選び直してください。`;
-            document.getElementById("relinkSearchInput").value = guessedName || "";
-            renderRelinkCandidates();
+
+            // 🌟 先にモーダルを開いてから中身を埋める（中身の生成でエラーが起きても
+            // モーダル自体は開いた状態になるため、「押しても何も起きない」を防げる）
             document.getElementById("relinkModal").classList.add("active");
+
+            try {
+                document.getElementById("relinkOldNameText").innerHTML = `保存されている情報: 「${escapeHtml(oldFullName)}」<br>データベース上の名前・都道府県・鉄道会社が変わった可能性があります。正しい駅を検索して選び直してください。`;
+                document.getElementById("relinkSearchInput").value = guessedName || "";
+                renderRelinkCandidates();
+            } catch (e) {
+                console.error(e);
+                document.getElementById("relinkCandidatesList").innerHTML =
+                    '<li style="font-size:12.5px; color:#ef4444; list-style:none;">エラーが発生しました：' + escapeHtml(String(e && e.message ? e.message : e)) + '</li>';
+            }
         }
 
         function closeRelinkModal(e) {
@@ -5181,8 +5180,6 @@
             inputMembers.value = "";
             renderParticipants();
             updateDistPlayersDropdown();
-            
-            recalculateTeamScores();
             saveGameStateToStorage(); 
         }
 
@@ -5264,7 +5261,6 @@
                 delBtn.onclick = () => { 
                     if (!confirm(`「${p.name}」をメンバーから削除しますか？`)) return;
                     gameParticipants.splice(idx, 1); 
-                    recalculateTeamScores();
                     renderParticipants(); 
                     updateDistPlayersDropdown();
                     saveGameStateToStorage();
@@ -5366,6 +5362,30 @@
             }
             
             text += `\n【スコア一覧】\n${scoreText}\n`;
+
+            // 🌟 距離企画以外は【履歴】も追加する
+            if (gameCategory === "character") {
+                let chars = gameHistory.filter(h => h.category !== "distance" && h.char !== undefined).map(h => h.char);
+                if (chars.length > 0) {
+                    let lines = [];
+                    for (let i = 0; i < chars.length; i += 5) {
+                        let chunk = chars.slice(i, i + 5).map(c => `「${c}」`).join("");
+                        // 10件（2行）ごとに、その時点までの累計件数を行末に付ける
+                        if ((i + 5) % 10 === 0 || i + 5 >= chars.length) {
+                            let countSoFar = Math.min(i + 5, chars.length);
+                            if (countSoFar % 10 === 0) chunk += countSoFar;
+                        }
+                        lines.push(chunk);
+                    }
+                    text += `\n【履歴】\n${lines.join("\n")}\n`;
+                }
+            } else if (gameCategory === "shiritori") {
+                let turns = gameHistory.filter(h => h.category === "shiritori" && h.chars !== undefined);
+                if (turns.length > 0) {
+                    let lines = turns.map(h => h.chars.map(c => `「${c}」`).join("→"));
+                    text += `\n【履歴】\n${lines.join("\n")}\n`;
+                }
+            }
             
             navigator.clipboard.writeText(text).then(() => {
                 alert("スコアリザルトをコピーしました！");
