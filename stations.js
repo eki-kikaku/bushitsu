@@ -9382,7 +9382,7 @@ const allStations = [
   { name: "蓮台寺", kana: "れんだいじ", pref: "静岡県", company: "伊豆急行", line: "伊豆急行線", subName: "", note: "", lat: 34.699606, lng: 138.941014 },
   { name: "連坊", kana: "れんぼう", pref: "宮城県", company: "仙台市交通局", line: "東西線", subName: "", note: "", lat: 38.251111, lng: 140.893056 },
   { name: "ロイズタウン", kana: "ろいずたうん", pref: "北海道", company: "北海道旅客鉄道", line: "札沼線", subName: "", note: "", lat: 43.179589, lng: 141.436236 },
-  { name: "ロープウェイ入口", kana: "ろーぷうぇいいりぐち", pref: "北海道", company: "札幌市交通事業振", line: "山鼻西線", subName: "", note: "", lat: 43.03367, lng: 141.337287 },
+  { name: "ロープウェイ入口", kana: "ろーぷうぇいいりぐち", pref: "北海道", company: "札幌市交通事業振興", line: "山鼻西線", subName: "", note: "", lat: 43.03367, lng: 141.337287 },
   { name: "芦花公園", kana: "ろかこうえん", pref: "東京都", company: "京王電鉄", line: "京王線", subName: "", note: "", lat: 35.670611, lng: 139.608889 },
   { name: "鹿王院", kana: "ろくおういん", pref: "京都府", company: "京福電気鉄道", line: "嵐山本線", subName: "", note: "", lat: 35.01704, lng: 135.685236 },
   { name: "六合", kana: "ろくごう", pref: "静岡県", company: "東海旅客鉄道", line: "東海道本線", subName: "", note: "", lat: 34.836586, lng: 138.204203 },
