@@ -905,7 +905,7 @@
         <div id="pageSearch" class="page-content">
             <!-- 提出用の一時リスト（Bentoスタイル ＋ 既提出駅設定 & コピー自動計算機能） -->
             <details style="margin-bottom: 18px;" class="bento-card">
-                <summary style="color: var(--primary-dark); font-size: 15px;">📋 提出用の一時リストを開く (<span id="memoCount">0</span>駅)</summary>
+                <summary style="color: var(--primary-dark); font-size: 15px;">📋 提出用リストを開く (<span id="memoCount">0</span>駅)</summary>
                 <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <span style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">すでに提出済みの駅数:</span>
@@ -917,6 +917,15 @@
                     </div>
                     <ul id="memoList" style="margin-top: 5px; max-height: 200px; overflow-y: auto;"></ul>
                     <button class="action-btn" onclick="copyForLine()" style="font-size: 15px; margin-top: 5px;">📋 リストをコピー</button>
+
+                    <details style="margin-top: 8px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
+                        <summary style="color: #7c3aed; font-size: 12.5px; font-weight: bold;">🎯 文字企画の履歴から候補を作る（後出し用）</summary>
+                        <p style="font-size: 11px; color: var(--text-muted); margin: 8px 0;">「「木」「野」「山」」のような履歴テキストを貼り付けると、それぞれの文字を含む自分のマイ駅から候補を自動で1つ選びます。プルダウンで手動に選び直してから「提出用リストに追加」を押すと、上のリストにまとめて追加されます。</p>
+                        <textarea id="submissionPasteInput" rows="3" placeholder="「木」「野」「山」「川」「下」" style="padding: 8px; font-size: 12.5px; width: 100%; box-sizing: border-box; border-radius: 8px;"></textarea>
+                        <button onclick="generateSubmissionList()" class="action-btn" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">候補を作成</button>
+                        <div id="submissionListContainer" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;"></div>
+                        <button id="copySubmissionListBtn" onclick="addSubmissionCandidatesToList()" class="action-btn" style="display:none; margin-top: 8px; width: 100%; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);">✅ 提出用リストに追加</button>
+                    </details>
                 </div>
             </details>
 
@@ -1112,15 +1121,6 @@
                     <textarea id="gameCustomRulesInput" rows="2" oninput="saveGameStateToStorage()" style="padding: 6px; font-size: 13px; margin-top: 4px;" placeholder="例：パスは3回まで、等..."></textarea>
                 </div>
                 </div>
-                </details>
-
-                <details style="margin-top: 12px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">
-                    <summary style="color: #7c3aed; font-size: 12.5px; font-weight: bold;">📋 後出し用リスト作成（履歴を貼り付け）</summary>
-                    <p style="font-size: 11px; color: var(--text-muted); margin: 8px 0;">「「木」「野」「山」」のような履歴テキストを貼り付けると、それぞれの文字を含む自分のマイ駅から候補を自動で1つ選んでリスト化します。プルダウンで手動に選び直すこともできます。</p>
-                    <textarea id="submissionPasteInput" rows="3" placeholder="「木」「野」「山」「川」「下」" style="padding: 8px; font-size: 12.5px; width: 100%; box-sizing: border-box; border-radius: 8px;"></textarea>
-                    <button onclick="generateSubmissionList()" class="action-btn" style="margin-top: 8px; width: 100%; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">リストを作成</button>
-                    <div id="submissionListContainer" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;"></div>
-                    <button id="copySubmissionListBtn" onclick="copySubmissionList()" class="action-btn" style="display:none; margin-top: 8px; width: 100%; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);">📋 リストをコピー</button>
                 </details>
             </div>
 
@@ -1532,6 +1532,33 @@
             </div>
             <div class="modal-footer">
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeRelinkModal(null)">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎮 参加枠の詳細編集モーダル -->
+    <div id="participantDetailModal" class="modal-overlay" onclick="closeParticipantDetailModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>🎮 参加枠を編集</span>
+                <button style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;" onclick="closeParticipantDetailModal(null)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:11px; color:var(--text-muted); font-weight:bold;">名前</label>
+                    <input type="text" id="pDetailNameInput" style="padding:8px 10px; font-size:14px; width:100%; box-sizing:border-box; margin-top:4px;">
+                </div>
+                <div id="pDetailMembersRow" style="margin-bottom:14px;">
+                    <label style="font-size:11px; color:var(--text-muted); font-weight:bold;">メンバー（チーム戦のみ）</label>
+                    <input type="text" id="pDetailMembersInput" style="padding:8px 10px; font-size:14px; width:100%; box-sizing:border-box; margin-top:4px;">
+                </div>
+                <p style="margin:0 0 8px 0; font-size:12px; font-weight:bold; color:var(--primary-dark);">📊 ターンごとのスコア</p>
+                <p style="margin:0 0 8px 0; font-size:11px; color:var(--text-muted);">各ターンでこの参加枠が獲得した点数を、直接書き換えられます。</p>
+                <div id="pDetailTurnsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeParticipantDetailModal(null)">閉じる</button>
+                <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="saveParticipantDetail()">保存</button>
             </div>
         </div>
     </div>
@@ -2552,7 +2579,7 @@
                 } else {
                     candidates.forEach(s => {
                         let opt = document.createElement("option");
-                        opt.value = `${s.name}（${s.pref}・${s.company}）`;
+                        opt.value = s.name;
                         opt.textContent = `${s.name}（${s.pref}・${s.company}）`;
                         select.appendChild(opt);
                     });
@@ -2567,20 +2594,28 @@
             document.getElementById("copySubmissionListBtn").style.display = "block";
         }
 
-        function copySubmissionList() {
+        function addSubmissionCandidatesToList() {
             let selects = document.querySelectorAll("#submissionListContainer .submission-select");
-            let lines = Array.from(selects).map(s => s.value).filter(v => v !== "");
+            let names = Array.from(selects).map(s => s.value).filter(v => v !== "");
 
-            if (lines.length === 0) {
-                alert("コピーできる候補がありません。");
+            if (names.length === 0) {
+                alert("追加できる候補がありません。");
                 return;
             }
 
-            navigator.clipboard.writeText(lines.join("\n")).then(() => {
-                alert("提出用リストをコピーしました！");
-            }).catch(() => {
-                alert("コピーに失敗しました。");
+            let addedCount = 0;
+            names.forEach(name => {
+                if (!stationMemo.includes(name)) {
+                    stationMemo.push(name);
+                    addedCount++;
+                }
             });
+            updateMemoList();
+
+            let skipped = names.length - addedCount;
+            let msg = `提出用リストに${addedCount}駅を追加しました！`;
+            if (skipped > 0) msg += `（${skipped}駅はすでにリストにありました）`;
+            alert(msg);
         }
 
         function renderMyCustomStations() {
@@ -5020,6 +5055,127 @@
             });
         }
 
+        // 🎮 参加枠の詳細編集（名前・メンバー・ターンごとのスコア）
+        let currentParticipantIdx = null;
+
+        function turnLabelFor_(h, idx) {
+            if (h.category === "distance") return `第${idx + 1}ターン: 📍${h.odai || ""}`;
+            if (h.category === "shiritori" || h.chars !== undefined) return `第${idx + 1}ターン: ${(h.chars || []).map(c => `「${c}」`).join("→")}`;
+            return `第${idx + 1}ターン: 「${h.char || ""}」`;
+        }
+
+        function openParticipantDetailModal(idx) {
+            let p = gameParticipants[idx];
+            if (!p) return;
+            currentParticipantIdx = idx;
+
+            let isTeamMode = false;
+            if (gameCategory === "character") isTeamMode = document.getElementById("gameTypeOption").value === "team";
+            else if (gameCategory === "shiritori") isTeamMode = document.getElementById("shiriTypeOption").value === "team";
+            else if (gameCategory === "distance") isTeamMode = document.getElementById("distTypeOption").value === "team";
+
+            document.getElementById("pDetailNameInput").value = p.name;
+            document.getElementById("pDetailMembersInput").value = p.members || "";
+            document.getElementById("pDetailMembersRow").style.display = isTeamMode ? "block" : "none";
+
+            let isCoopMode = getCurrentIsCoopMode_();
+            let turnsList = document.getElementById("pDetailTurnsList");
+            turnsList.innerHTML = "";
+
+            if (gameHistory.length === 0) {
+                turnsList.innerHTML = '<div style="font-size:12px; color:var(--text-muted);">まだターンの履歴がありません。</div>';
+            } else {
+                gameHistory.forEach((h, hIdx) => {
+                    let row = document.createElement("div");
+                    row.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--input-bg); border-radius:8px; padding:6px 10px;";
+
+                    let label = document.createElement("span");
+                    label.textContent = turnLabelFor_(h, hIdx);
+                    label.style.cssText = "font-size:11.5px; color:var(--text-main); flex:1; min-width:0;";
+                    row.appendChild(label);
+
+                    let input = document.createElement("input");
+                    input.type = "number";
+                    input.className = "pDetailTurnScore";
+                    input.dataset.historyIndex = hIdx;
+                    input.value = getTurnScoreForParticipant_(h, p.name, isCoopMode);
+                    input.style.cssText = "width:60px; padding:4px; font-size:13px; text-align:center; border-radius:6px; background:var(--input-bg); border:1px solid var(--glass-border); flex-shrink:0;";
+                    row.appendChild(input);
+
+                    turnsList.appendChild(row);
+                });
+            }
+
+            document.getElementById("participantDetailModal").classList.add("active");
+        }
+
+        function closeParticipantDetailModal(e) {
+            document.getElementById("participantDetailModal").classList.remove("active");
+            currentParticipantIdx = null;
+        }
+
+        function saveParticipantDetail() {
+            if (currentParticipantIdx === null) return;
+            let p = gameParticipants[currentParticipantIdx];
+            if (!p) return;
+
+            let newName = document.getElementById("pDetailNameInput").value.trim();
+            let newMembers = document.getElementById("pDetailMembersInput").value.trim();
+            if (newName === "") { alert("名前を入力してください。"); return; }
+
+            let oldName = p.name;
+
+            // 🌟 名前が変わった場合、過去の履歴（勝者判定・距離結果・上書きスコア）も新しい名前に引き継ぐ
+            if (newName !== oldName) {
+                gameHistory.forEach(h => {
+                    if (h.wonTeams) {
+                        h.wonTeams = h.wonTeams.map(n => n === oldName ? newName : n);
+                    }
+                    if (h.results) {
+                        h.results.forEach(r => { if (r.player === oldName) r.player = newName; });
+                    }
+                    if (h.scoreOverrides && h.scoreOverrides[oldName] !== undefined) {
+                        h.scoreOverrides[newName] = h.scoreOverrides[oldName];
+                        delete h.scoreOverrides[oldName];
+                    }
+                });
+            }
+
+            p.name = newName;
+            p.members = newMembers;
+
+            let isCoopMode = getCurrentIsCoopMode_();
+
+            // 🌟 各ターンの入力値が、自動計算のデフォルト値と違う場合だけ上書き情報として保存する
+            document.querySelectorAll("#pDetailTurnsList .pDetailTurnScore").forEach(input => {
+                let hIdx = parseInt(input.dataset.historyIndex, 10);
+                let h = gameHistory[hIdx];
+                if (!h) return;
+
+                let editedVal = parseInt(input.value, 10);
+                if (isNaN(editedVal)) editedVal = 0;
+
+                // 上書きを外した状態でのデフォルト値を、一時的に上書き無視で計算する
+                let hWithoutOverride = { ...h, scoreOverrides: null };
+                let defaultVal = getTurnScoreForParticipant_(hWithoutOverride, newName, isCoopMode);
+
+                if (editedVal === defaultVal) {
+                    if (h.scoreOverrides && h.scoreOverrides[newName] !== undefined) {
+                        delete h.scoreOverrides[newName];
+                    }
+                } else {
+                    if (!h.scoreOverrides) h.scoreOverrides = {};
+                    h.scoreOverrides[newName] = editedVal;
+                }
+            });
+
+            recalculateTeamScores();
+            updateGameHistoryDisplay();
+            updateDistPlayersDropdown();
+            closeParticipantDetailModal(null);
+            saveGameStateToStorage();
+        }
+
         // 🕰 名称・会社の変遷（旧名）モーダル
         let currentEraStation = null;
 
@@ -5306,42 +5462,39 @@
             container.appendChild(btnWrapper);
         }
 
+        // 🌟 特定ターン・特定参加者のスコアを求める（手動で上書きされていればそれを優先する）
+        function getTurnScoreForParticipant_(h, pName, isCoopMode) {
+            if (h.scoreOverrides && h.scoreOverrides[pName] !== undefined) {
+                return h.scoreOverrides[pName];
+            }
+            if (h.category === "distance") {
+                let r = h.results && h.results.find(r => r.player === pName);
+                return (r && r.isRankedIn) ? r.points : 0;
+            }
+            if (isCoopMode) {
+                return (h.wonTeams && h.wonTeams.includes("全員")) ? 1 : 0;
+            }
+            return (h.wonTeams && h.wonTeams.includes(pName)) ? 1 : 0;
+        }
+
+        function getCurrentIsCoopMode_() {
+            if (gameCategory === "shiritori") {
+                return document.getElementById("shiriTypeOption").value === "coop";
+            } else if (gameCategory === "distance") {
+                return document.getElementById("distTypeOption").value === "coop";
+            }
+            return false;
+        }
+
         function recalculateTeamScores() {
             gameParticipants.forEach(p => { p.score = 0; });
             
-            let isCoopMode = false;
-            if (gameCategory === "shiritori") {
-                isCoopMode = document.getElementById("shiriTypeOption").value === "coop";
-            } else if (gameCategory === "distance") {
-                isCoopMode = document.getElementById("distTypeOption").value === "coop";
-            }
+            let isCoopMode = getCurrentIsCoopMode_();
 
             gameHistory.forEach(h => {
-                // 距離企画は独自の距離算出時に即時加算されるため、ここでは除外
-                if (h.category === "distance") {
-                    if (h.results) {
-                        h.results.forEach(r => {
-                            if (r.isRankedIn) {
-                                let team = gameParticipants.find(p => p.name === r.player);
-                                if (team) team.score += r.points;
-                            }
-                        });
-                    }
-                    return;
-                }
-
-                if (h.wonTeams) {
-                    if (isCoopMode) {
-                        if (h.wonTeams.includes("全員")) {
-                            gameParticipants.forEach(p => p.score++);
-                        }
-                    } else {
-                        h.wonTeams.forEach(tName => {
-                            let team = gameParticipants.find(p => p.name === tName);
-                            if (team) team.score++;
-                        });
-                    }
-                }
+                gameParticipants.forEach(p => {
+                    p.score += getTurnScoreForParticipant_(h, p.name, isCoopMode);
+                });
             });
             renderParticipants();
         }
@@ -5390,19 +5543,31 @@
                 isTeamMode = document.getElementById("distTypeOption").value === "team";
             }
             
-            gameParticipants.forEach((p, idx) => {
+            // 🌟 得点順（降順）に並べ替えて表示する。実際の gameParticipants の並びは変えず、
+            // 削除などの操作は元の配列でのインデックスを探して行う。
+            let sortedParticipants = [...gameParticipants].sort((a, b) => b.score - a.score);
+
+            sortedParticipants.forEach((p, rank) => {
+                let idx = gameParticipants.indexOf(p);
+
                 let li = document.createElement("li");
                 li.className = "score-row";
-                li.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1px solid var(--glass-border); border-radius:10px; margin-bottom:6px; padding:10px 12px;";
+                li.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1px solid var(--glass-border); border-radius:10px; margin-bottom:6px; padding:10px 12px; cursor:pointer;";
+                li.title = "タップして参加枠を編集";
+                li.onclick = (e) => {
+                    // 操作ボタン（-/+/削除/スコア入力）をタップした時は詳細モーダルを開かない
+                    if (e.target.closest(".score-btn, .delete-btn, input")) return;
+                    openParticipantDetailModal(idx);
+                };
                 
                 let nameContainer = document.createElement("div");
                 nameContainer.style.display = "flex";
                 nameContainer.style.flexDirection = "column";
-                
+
                 let nameSpan = document.createElement("span");
                 nameSpan.style.fontWeight = "bold";
                 nameSpan.style.color = "var(--text-main)";
-                nameSpan.textContent = p.name;
+                nameSpan.textContent = `${rank + 1}位　${p.name}`;
                 nameContainer.appendChild(nameSpan);
                 
                 if (isTeamMode && p.members) {
@@ -5441,6 +5606,8 @@
                     p.score = isNaN(val) ? 0 : val;
                     saveGameStateToStorage();
                 };
+                // 🌟 入力中に毎回並べ替えると打ちにくいので、入力確定時（フォーカスを外した時）に順位を反映する
+                scoreInput.onchange = () => renderParticipants();
                 
                 let plusBtn = document.createElement("button");
                 plusBtn.className = "score-btn";
@@ -5454,7 +5621,8 @@
                 delBtn.textContent = "削除";
                 delBtn.onclick = () => { 
                     if (!confirm(`「${p.name}」をメンバーから削除しますか？`)) return;
-                    gameParticipants.splice(idx, 1); 
+                    let realIdx = gameParticipants.indexOf(p);
+                    gameParticipants.splice(realIdx, 1); 
                     renderParticipants(); 
                     updateDistPlayersDropdown();
                     saveGameStateToStorage();
@@ -5536,7 +5704,8 @@
             }
             
             let isTeamMode = modeType === "チーム戦";
-            let scoreText = gameParticipants.map(p => {
+            let sortedForCopy = [...gameParticipants].sort((a, b) => b.score - a.score);
+            let scoreText = sortedForCopy.map(p => {
                 let base = `${p.name} ${p.score}点`;
                 if (isTeamMode && p.members) {
                     base += ` (メンバー: ${p.members})`;
