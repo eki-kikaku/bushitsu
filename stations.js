@@ -1308,7 +1308,7 @@ const allStations = [
   { name: "越後湯沢", kana: "えちごゆざわ", pref: "新潟県", company: "東日本旅客鉄道", line: "上越新幹線/上越線", subName: "", note: "", lat: 36.935917, lng: 138.809639 },
   { name: "越前大野", kana: "えちぜんおおの", pref: "福井県", company: "西日本旅客鉄道", line: "越美北線", subName: "", note: "", lat: 35.983014, lng: 136.496886 },
   { name: "越前大宮", kana: "えちぜんおおみや", pref: "福井県", company: "西日本旅客鉄道", line: "越美北線", subName: "", note: "", lat: 36.000131, lng: 136.409825 },
-  { name: "越前開発", kana: "えちぜんかいほつ", pref: "福井県", company: "西日本旅客鉄道", line: "越美北線", subName: "", note: "", lat: 36.075358, lng: 136.241275 },
+  { name: "越前開発", kana: "えちぜんかいほつ", pref: "福井県", company: "えちぜん鉄道", line: "勝山永平寺線", subName: "", note: "", lat: 36.075358, lng: 136.241275 },
   { name: "越前島橋", kana: "えちぜんしまばし", pref: "福井県", company: "えちぜん鉄道", line: "勝山永平寺線", subName: "", note: "", lat: 36.09, lng: 136.277083 },
   { name: "越前下山", kana: "えちぜんしもやま", pref: "福井県", company: "西日本旅客鉄道", line: "越美北線", subName: "", note: "", lat: 35.920486, lng: 136.634975 },
   { name: "越前新保", kana: "えちぜんしんぼ", pref: "福井県", company: "えちぜん鉄道", line: "勝山永平寺線", subName: "", note: "", lat: 36.080417, lng: 136.25125 },
