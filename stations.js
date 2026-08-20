@@ -9251,6 +9251,7 @@ const allStations = [
   { name: "吉野", kana: "よしの", pref: "奈良県", company: "近畿日本鉄道", line: "吉野線", subName: "", note: "", lat: 34.376931, lng: 135.853508 },
   { name: "吉野", kana: "よしの", pref: "福岡県", company: "九州旅客鉄道", line: "鹿児島本線", subName: "", note: "", lat: 33.075817, lng: 130.466436 },
   { name: "吉野ケ里公園", kana: "よしのがりこうえん", pref: "佐賀県", company: "九州旅客鉄道", line: "長崎本線", subName: "", note: "", lat: 33.324917, lng: 130.399553 },
+  { name: "吉野口", kana: "よしのぐち", pref: "奈良県", company: "西日本旅客鉄道", line: "和歌山線", subName: "", note: "", lat: 34.420704, lng: 135.750343 },
   { name: "吉野口", kana: "よしのぐち", pref: "奈良県", company: "近畿日本鉄道", line: "吉野線", subName: "", note: "", lat: 34.420704, lng: 135.750343 },
   { name: "吉野神宮", kana: "よしのじんぐう", pref: "奈良県", company: "近畿日本鉄道", line: "吉野線", subName: "", note: "", lat: 34.390191, lng: 135.848211 },
   { name: "吉野町", kana: "よしのちょう", pref: "神奈川県", company: "横浜市交通局", line: "1号線", subName: "", note: "", lat: 35.435489, lng: 139.618455 },
