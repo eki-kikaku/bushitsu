@@ -2903,7 +2903,7 @@
         }
 
         function searchStations() {
-            let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+            let keywordRaw = normalizeKanjiVariants(document.getElementById("searchInput").value.trim());
             let type = document.getElementById("searchType").value;
 
             let checkName = document.getElementById("checkName").checked;
@@ -2945,7 +2945,7 @@
             let results = sourceList.filter(item => {
                 if (charCount !== null && item.name.length !== charCount) return false;
 
-                if (keyword === "") return true;
+                if (keywordRaw === "") return true;
 
                 let targets = [];
                 if (checkName) targets.push(item.name);
@@ -2955,13 +2955,15 @@
                 if (checkPref) targets.push(item.pref);
                 if (checkKana) targets.push(item.kana);
 
-                return targets.some(target => {
-                    let t = target.toLowerCase();
-                    if (type === "partial") return t.includes(keyword);
-                    if (type === "forward") return t.startsWith(keyword);
-                    if (type === "backward") return t.endsWith(keyword);
-                    if (type === "exact") return t === keyword;
-                    if (type === "forward_backward") {
+                if (targets.length === 0) return false;
+
+                let lowerTargets = targets.map(t => normalizeKanjiVariants(t).toLowerCase());
+
+                // 🌟 「前方＋後方」結合モードは、空白を前方部分／後方部分の区切りとして使う既存の仕様のまま
+                // （新しい複数語AND検索とは空白の意味が異なるため、こちらは対象外にする）
+                if (type === "forward_backward") {
+                    let keyword = keywordRaw.toLowerCase();
+                    return lowerTargets.some(t => {
                         let parts = keyword.split(/[\s　]+/).filter(p => p !== "");
                         if (parts.length >= 2) {
                             let prefix = parts[0];
@@ -2972,8 +2974,23 @@
                         let firstChar = keyword.charAt(0);
                         let lastChar = keyword.charAt(keyword.length - 1);
                         return t.startsWith(firstChar) && t.endsWith(lastChar);
-                    }
-                    return false;
+                    });
+                }
+
+                // 🌟 空白（半角・全角）区切りで複数語のAND検索を行う。
+                // 各語は、チェックされている項目のうち「どれか1つ」に、選択中の一致方法でヒットすればOK。
+                // （例：「大阪　阪急」→ どこかの項目に"大阪"を含み、かつどこかの項目に"阪急"を含む駅）
+                let terms = keywordRaw.toLowerCase().split(/[\s　]+/).filter(t => t !== "");
+                if (terms.length === 0) return true;
+
+                return terms.every(term => {
+                    return lowerTargets.some(t => {
+                        if (type === "partial") return t.includes(term);
+                        if (type === "forward") return t.startsWith(term);
+                        if (type === "backward") return t.endsWith(term);
+                        if (type === "exact") return t === term;
+                        return false;
+                    });
                 });
             });
 
@@ -5497,6 +5514,37 @@
             return false;
         }
 
+        // 🌟 手動でのスコア調整（+/-や直接入力）を、最後のターンへの「上書き」として記録する。
+        // こうすることで、履歴からの再計算が走っても手動調整分が消えずに残る。
+        function applyScoreDelta_(p, delta) {
+            if (delta === 0) return;
+
+            if (gameHistory.length === 0) {
+                // 紐付けるターンが無いので、そのまま直接調整する
+                p.score += delta;
+                saveGameStateToStorage();
+                return;
+            }
+
+            let isCoopMode = getCurrentIsCoopMode_();
+            let lastH = gameHistory[gameHistory.length - 1];
+            let currentTurnScore = getTurnScoreForParticipant_(lastH, p.name, isCoopMode);
+            let newTurnScore = currentTurnScore + delta;
+
+            let hWithoutOverride = { ...lastH, scoreOverrides: null };
+            let defaultVal = getTurnScoreForParticipant_(hWithoutOverride, p.name, isCoopMode);
+
+            if (newTurnScore === defaultVal) {
+                if (lastH.scoreOverrides) delete lastH.scoreOverrides[p.name];
+            } else {
+                if (!lastH.scoreOverrides) lastH.scoreOverrides = {};
+                lastH.scoreOverrides[p.name] = newTurnScore;
+            }
+
+            recalculateTeamScores();
+            saveGameStateToStorage();
+        }
+
         function recalculateTeamScores() {
             gameParticipants.forEach(p => { p.score = 0; });
             
@@ -5620,7 +5668,7 @@
                 let minusBtn = document.createElement("button");
                 minusBtn.className = "score-btn minus";
                 minusBtn.textContent = "ー";
-                minusBtn.onclick = () => { p.score--; renderParticipants(); saveGameStateToStorage(); };
+                minusBtn.onclick = () => { applyScoreDelta_(p, -1); renderParticipants(); };
                 
                 let scoreInput = document.createElement("input");
                 scoreInput.type = "number";
@@ -5634,18 +5682,18 @@
                 scoreInput.style.color = "var(--text-main)";
                 scoreInput.style.border = "1px solid var(--glass-border)";
                 scoreInput.value = p.score;
-                scoreInput.oninput = (e) => {
-                    let val = parseInt(e.target.value);
-                    p.score = isNaN(val) ? 0 : val;
-                    saveGameStateToStorage();
+                // 🌟 入力中に毎回並べ替えると打ちにくいので、入力確定時（フォーカスを外した時）にまとめて反映する
+                scoreInput.onchange = (e) => {
+                    let val = parseInt(e.target.value, 10);
+                    if (isNaN(val)) val = p.score;
+                    applyScoreDelta_(p, val - p.score);
+                    renderParticipants();
                 };
-                // 🌟 入力中に毎回並べ替えると打ちにくいので、入力確定時（フォーカスを外した時）に順位を反映する
-                scoreInput.onchange = () => renderParticipants();
                 
                 let plusBtn = document.createElement("button");
                 plusBtn.className = "score-btn";
                 plusBtn.textContent = "＋";
-                plusBtn.onclick = () => { p.score++; renderParticipants(); saveGameStateToStorage(); };
+                plusBtn.onclick = () => { applyScoreDelta_(p, 1); renderParticipants(); };
                 
                 let delBtn = document.createElement("button");
                 delBtn.className = "delete-btn";
