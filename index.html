@@ -1765,6 +1765,18 @@
             return a.localeCompare(b, 'ja'); // 五十音
         }
 
+        // 🌟 「五十音順」表示は、駅データベースに整理番号（no）がある場合はそちらを優先して使う。
+        // no が付与された駅（公式データ）どうしは no 順、no が無い駅（カスタム駅など）は
+        // no 付きの駅より後ろにまとめて、その中はふりがなで比較する。
+        function compareStationOrder(a, b) {
+            let noA = (typeof a.no === "number" && !isNaN(a.no)) ? a.no : null;
+            let noB = (typeof b.no === "number" && !isNaN(b.no)) ? b.no : null;
+            if (noA !== null && noB !== null) return noA - noB;
+            if (noA !== null && noB === null) return -1;
+            if (noA === null && noB !== null) return 1;
+            return compareKanaMultiScript(a.kana, b.kana);
+        }
+
         // 🌟 駅名表記ゆれ（異体字・旧字体・IVS）を吸収するための正規化。
         // 「塚／塚」「髙／高」「﨑／崎」「辻／辻󠄀（異体字セレクタ付き）」など、
         // 環境によって入力・表示できる字が違う駅名でも、検索・登録のどちらの字を使ってもヒットするようにする。
@@ -2329,7 +2341,7 @@
             });
 
             combinedStationsList = allStations.concat(allCustoms);
-            combinedStationsList.sort((a, b) => compareKanaMultiScript(a.kana, b.kana));
+            combinedStationsList.sort((a, b) => compareStationOrder(a, b));
         }
 
         let editingCustomStationIndex = null;
@@ -2727,7 +2739,7 @@
                     if (!isForeignA && !isForeignB) {
                         // 日本の都道府県同士 → これまで通り地理的な順（北から南）
                         if (idxA !== idxB) return idxA - idxB;
-                        return compareKanaMultiScript(a.kana, b.kana);
+                        return compareStationOrder(a, b);
                     }
                     if (isForeignA !== isForeignB) {
                         // 🌟 日本以外の地域は、駅数が一番少ない都道府県よりも必ず後ろに来る
@@ -2739,17 +2751,17 @@
                     let countB = prefCounts[b.pref] || 0;
                     if (countB !== countA) return countB - countA;
                     if (a.pref !== b.pref) return a.pref.localeCompare(b.pref, 'ja');
-                    return compareKanaMultiScript(a.kana, b.kana);
+                    return compareStationOrder(a, b);
                 });
             } else if (sortType === "company") {
                 listData.sort((a, b) => {
                     let countA = companyCounts[a.company] || 0;
                     let countB = companyCounts[b.company] || 0;
                     if (countB !== countA) return countB - countA;
-                    return compareKanaMultiScript(a.kana, b.kana);
+                    return compareStationOrder(a, b);
                 });
             } else {
-                listData.sort((a, b) => compareKanaMultiScript(a.kana, b.kana));
+                listData.sort((a, b) => compareStationOrder(a, b));
             }
         }
 
