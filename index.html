@@ -1030,9 +1030,10 @@
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                     <p style="margin: 0 0 4px 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.4;">
                         改行ごとに駅名を入力してね！<br>
-                        例：梅田（阪急電鉄） / 大久保（東京都）
+                        例：梅田（阪急電鉄） / 大久保（東京都）<br>
+                        🚃 駅名の代わりに「鉄道会社名」「路線名」「都道府県名」だけを1行に入力すると、それに属する駅をまとめて登録できます（例：阪急電鉄 / 山陽新幹線 / 大阪府）。
                     </p>
-                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）&#13;東京"></textarea>
+                    <textarea id="bulkStationInput" rows="5" style="width: 100%;" placeholder="梅田（阪急電鉄）&#13;大久保（東京都）&#13;大久保（秋田県）&#13;東京&#13;阪急電鉄&#13;大阪府"></textarea>
                     <button class="action-btn" onclick="addBulkOwnStations()" style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; margin-top: 5px;">まとめてマイ駅に登録</button>
                     
                     <div id="bulkResultLog" class="log-box hidden"></div>
@@ -1708,6 +1709,16 @@
         function getPrefIndex(prefName) {
             const index = prefOrder.findIndex(p => p.startsWith(prefName));
             return index === -1 ? 999 : index;
+        }
+
+        // 🌟 「都」「道」「府」「県」を省略した入力（例：東京・大阪・北海道）を正式名称に補う
+        function normalizePrefName_(name) {
+            if (!name) return name;
+            if (name.endsWith("都") || name.endsWith("道") || name.endsWith("府") || name.endsWith("県")) return name;
+            if (name === "東京") return "東京都";
+            if (name === "大阪") return "大阪府";
+            if (name === "京都") return "京都府";
+            return name + "県";
         }
 
         const GOJUON_GRID = [
@@ -2841,8 +2852,51 @@
                 let candidates = combinedStationsList.filter(s => s.name === targetName);
 
                 if (candidates.length === 0) {
-                    reportMessages.push(`❌ 【未登録】「${inputLine}」という駅はデータベースに存在しません。`);
-                    recheckReports.push(`${inputLine}（データ上にありませんでした）`);
+                    // 🌟 駅名として見つからない場合、鉄道会社名・路線名・都道府県名としての一致を試し、
+                    // 一致すればそれに属する駅をまとめて追加する
+                    let companyMatches = combinedStationsList.filter(s => s.company === targetName);
+                    let lineMatches = combinedStationsList.filter(s => {
+                        if (!s.line) return false;
+                        if (s.line === targetName) return true;
+                        // 路線名が「山陽新幹線/山陽本線」のように複数まとめて入っている場合にも対応
+                        return s.line.split(/[\/／]/).map(l => l.trim()).includes(targetName);
+                    });
+                    let normalizedPrefName = normalizePrefName_(targetName);
+                    let prefMatches = combinedStationsList.filter(s => s.pref === targetName || s.pref === normalizedPrefName);
+
+                    let bulkMatches, bulkTypeLabel;
+                    if (companyMatches.length > 0) {
+                        bulkMatches = companyMatches; bulkTypeLabel = "鉄道会社";
+                    } else if (lineMatches.length > 0) {
+                        bulkMatches = lineMatches; bulkTypeLabel = "路線";
+                    } else {
+                        bulkMatches = prefMatches; bulkTypeLabel = "都道府県";
+                    }
+
+                    if (bulkMatches.length > 0) {
+                        let addedNames = [];
+                        let dupCount = 0;
+                        bulkMatches.forEach(s => {
+                            if (!isStationInList(myOwnStations, s)) {
+                                myOwnStations.push(makeStationFullName(s));
+                                addedNames.push(s.name);
+                            } else {
+                                dupCount++;
+                            }
+                        });
+                        if (addedNames.length > 0) {
+                            let dupNote = dupCount > 0 ? `（${dupCount}駅は登録済みのためスキップ）` : "";
+                            let namesPreview = addedNames.length > 20
+                                ? addedNames.slice(0, 20).join('、') + `...他${addedNames.length - 20}駅`
+                                : addedNames.join('、');
+                            reportMessages.push(`🚃 【${bulkTypeLabel}一括登録】「${targetName}」の${addedNames.length}駅を追加しました：${namesPreview}${dupNote}`);
+                        } else {
+                            reportMessages.push(`⚠️ 【重複】「${targetName}」に属する駅は、すべて既にマイ駅に登録されています。`);
+                        }
+                    } else {
+                        reportMessages.push(`❌ 【未登録】「${inputLine}」という駅・鉄道会社・路線はデータベースに存在しません。`);
+                        recheckReports.push(`${inputLine}（データ上にありませんでした）`);
+                    }
                 } else if (candidates.length === 1) {
                     // 駅候補がそもそも1つしかない場合
                     let s = candidates[0];
