@@ -1558,9 +1558,7 @@
                     <label style="font-size:11px; color:var(--text-muted); font-weight:bold;">メンバー（チーム戦のみ）</label>
                     <input type="text" id="pDetailMembersInput" style="padding:8px 10px; font-size:14px; width:100%; box-sizing:border-box; margin-top:4px;">
                 </div>
-                <p style="margin:0 0 8px 0; font-size:12px; font-weight:bold; color:var(--primary-dark);">📊 ターンごとのスコア</p>
-                <p style="margin:0 0 8px 0; font-size:11px; color:var(--text-muted);">各ターンでこの参加枠が獲得した点数を、直接書き換えられます。</p>
-                <div id="pDetailTurnsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+                <p style="margin:0; font-size:11px; color:var(--text-muted);">スコアの調整は一覧の「－」「＋」ボタンや点数欄から行えます。</p>
             </div>
             <div class="modal-footer">
                 <button class="action-btn" style="width: auto; padding: 8px 16px; font-size: 13px; background:var(--glass-border); color:var(--text-main);" onclick="closeParticipantDetailModal(null)">閉じる</button>
@@ -4654,12 +4652,12 @@
                 let labelText = "";
                 let hasWon = false;
 
-                if (h.category === "shiritori" || h.chars !== undefined) {
+                if (Array.isArray(h.chars)) {
                     labelText = h.chars.map(c => `「${c}」`).join("→");
                     hasWon = (isTeamMode || isCoopMode) && h.wonTeams && h.wonTeams.length > 0;
                 } else if (h.category === "distance") {
                     // 📍 距離企画の履歴表示
-                    labelText = `📍 ${h.odai.split("（")[0]}`; // 駅名だけスッキリ表示
+                    labelText = `📍 ${(h.odai || "不明").split("（")[0]}`; // 駅名だけスッキリ表示
                     hasWon = h.results && h.results.some(r => r.points > 0);
                 } else {
                     labelText = `「${h.char}」`;
@@ -4766,7 +4764,8 @@
             if (h.category === "distance") {
                 text += buildDistanceResultText(h);
             } else if (h.category === "shiritori") {
-                text += `【しりとり結果】\nお題：${h.chars.map(c => `「${c}」`).join(" → ")}\n`;
+                let charsText = Array.isArray(h.chars) ? h.chars.map(c => `「${c}」`).join(" → ") : "（データなし）";
+                text += `【しりとり結果】\nお題：${charsText}\n`;
                 if (h.wonTeams && h.wonTeams.length > 0) {
                     text += `達成：${h.wonTeams.join(", ")}`;
                 } else {
@@ -5143,14 +5142,8 @@
             });
         }
 
-        // 🎮 参加枠の詳細編集（名前・メンバー・ターンごとのスコア）
+        // 🎮 参加枠の詳細編集（名前・メンバー）
         let currentParticipantIdx = null;
-
-        function turnLabelFor_(h, idx) {
-            if (h.category === "distance") return `第${idx + 1}ターン: 📍${h.odai || ""}`;
-            if (h.category === "shiritori" || h.chars !== undefined) return `第${idx + 1}ターン: ${(h.chars || []).map(c => `「${c}」`).join("→")}`;
-            return `第${idx + 1}ターン: 「${h.char || ""}」`;
-        }
 
         function openParticipantDetailModal(idx) {
             let p = gameParticipants[idx];
@@ -5165,34 +5158,6 @@
             document.getElementById("pDetailNameInput").value = p.name;
             document.getElementById("pDetailMembersInput").value = p.members || "";
             document.getElementById("pDetailMembersRow").style.display = isTeamMode ? "block" : "none";
-
-            let isCoopMode = getCurrentIsCoopMode_();
-            let turnsList = document.getElementById("pDetailTurnsList");
-            turnsList.innerHTML = "";
-
-            if (gameHistory.length === 0) {
-                turnsList.innerHTML = '<div style="font-size:12px; color:var(--text-muted);">まだターンの履歴がありません。</div>';
-            } else {
-                gameHistory.forEach((h, hIdx) => {
-                    let row = document.createElement("div");
-                    row.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--input-bg); border-radius:8px; padding:6px 10px;";
-
-                    let label = document.createElement("span");
-                    label.textContent = turnLabelFor_(h, hIdx);
-                    label.style.cssText = "font-size:11.5px; color:var(--text-main); flex:1; min-width:0;";
-                    row.appendChild(label);
-
-                    let input = document.createElement("input");
-                    input.type = "number";
-                    input.className = "pDetailTurnScore";
-                    input.dataset.historyIndex = hIdx;
-                    input.value = getTurnScoreForParticipant_(h, p.name, isCoopMode);
-                    input.style.cssText = "width:60px; padding:4px; font-size:13px; text-align:center; border-radius:6px; background:var(--input-bg); border:1px solid var(--glass-border); flex-shrink:0;";
-                    row.appendChild(input);
-
-                    turnsList.appendChild(row);
-                });
-            }
 
             document.getElementById("participantDetailModal").classList.add("active");
         }
@@ -5213,7 +5178,7 @@
 
             let oldName = p.name;
 
-            // 🌟 名前が変わった場合、過去の履歴（勝者判定・距離結果・上書きスコア）も新しい名前に引き継ぐ
+            // 🌟 名前が変わった場合、過去の履歴（勝者判定・距離結果）も新しい名前に引き継ぐ
             if (newName !== oldName) {
                 gameHistory.forEach(h => {
                     if (h.wonTeams) {
@@ -5222,48 +5187,13 @@
                     if (h.results) {
                         h.results.forEach(r => { if (r.player === oldName) r.player = newName; });
                     }
-                    if (h.scoreOverrides && h.scoreOverrides[oldName] !== undefined) {
-                        h.scoreOverrides[newName] = h.scoreOverrides[oldName];
-                        delete h.scoreOverrides[oldName];
-                    }
                 });
             }
 
             p.name = newName;
             p.members = newMembers;
 
-            let isCoopMode = getCurrentIsCoopMode_();
-
-            // 🌟 各ターンの入力値が、自動計算のデフォルト値と違う場合だけ上書き情報として保存する
-            document.querySelectorAll("#pDetailTurnsList .pDetailTurnScore").forEach(input => {
-                let hIdx = parseInt(input.dataset.historyIndex, 10);
-                let h = gameHistory[hIdx];
-                if (!h) return;
-
-                let editedVal = parseInt(input.value, 10);
-                if (isNaN(editedVal)) editedVal = 0;
-
-                // 上書きを外した状態でのデフォルト値を、一時的に上書き無視で計算する
-                let hWithoutOverride = { ...h, scoreOverrides: null };
-                let defaultVal = getTurnScoreForParticipant_(hWithoutOverride, newName, isCoopMode);
-
-                if (editedVal === defaultVal) {
-                    if (h.scoreOverrides && h.scoreOverrides[newName] !== undefined) {
-                        delete h.scoreOverrides[newName];
-                    }
-                } else {
-                    if (!h.scoreOverrides) h.scoreOverrides = {};
-                    h.scoreOverrides[newName] = editedVal;
-                }
-            });
-
-            // 🌟 履歴が1件もない場合は、ターンから再計算するものが存在しないため recalculateTeamScores() を呼ばない
-            // （呼んでしまうと、履歴に紐付いていない手動調整スコアが0にリセットされてしまうため）
-            if (gameHistory.length > 0) {
-                recalculateTeamScores();
-            } else {
-                renderParticipants();
-            }
+            recalculateTeamScores();
             updateGameHistoryDisplay();
             updateDistPlayersDropdown();
             closeParticipantDetailModal(null);
@@ -5449,7 +5379,7 @@
             
             container.classList.remove("hidden");
             let h = gameHistory[selectedHistoryIndex];
-            let isShiritori = h.category === "shiritori" || h.chars !== undefined;
+            let isShiritori = Array.isArray(h.chars);
             let displayLabel = isShiritori ? h.chars.map(c => `「${c}」`).join("→") : `「${h.char}」`;
             
             let pTitle = document.createElement("p");
@@ -5557,10 +5487,8 @@
         }
 
         // 🌟 特定ターン・特定参加者のスコアを求める（手動で上書きされていればそれを優先する）
+        // 🌟 特定ターン・特定参加者の「自動計算」スコアを求める（勝敗判定・距離企画の結果のみに基づく）
         function getTurnScoreForParticipant_(h, pName, isCoopMode) {
-            if (h.scoreOverrides && h.scoreOverrides[pName] !== undefined) {
-                return h.scoreOverrides[pName];
-            }
             if (h.category === "distance") {
                 let r = h.results && h.results.find(r => r.player === pName);
                 return (r && r.isRankedIn) ? r.points : 0;
@@ -5580,41 +5508,21 @@
             return false;
         }
 
-        // 🌟 手動でのスコア調整（+/-や直接入力）を、最後のターンへの「上書き」として記録する。
-        // こうすることで、履歴からの再計算が走っても手動調整分が消えずに残る。
+        // 🌟 手動でのスコア調整（+/-や直接入力）は、「manualAdjustment」という別枠にずっと足し引きし続ける。
+        // どのターンに属するかを考える必要が無く、履歴からの再計算が何度走っても消えたりズレたりしない。
         function applyScoreDelta_(p, delta) {
             if (delta === 0) return;
-
-            if (gameHistory.length === 0) {
-                // 紐付けるターンが無いので、そのまま直接調整する
-                p.score += delta;
-                saveGameStateToStorage();
-                return;
-            }
-
-            let isCoopMode = getCurrentIsCoopMode_();
-            let lastH = gameHistory[gameHistory.length - 1];
-            let currentTurnScore = getTurnScoreForParticipant_(lastH, p.name, isCoopMode);
-            let newTurnScore = currentTurnScore + delta;
-
-            let hWithoutOverride = { ...lastH, scoreOverrides: null };
-            let defaultVal = getTurnScoreForParticipant_(hWithoutOverride, p.name, isCoopMode);
-
-            if (newTurnScore === defaultVal) {
-                if (lastH.scoreOverrides) delete lastH.scoreOverrides[p.name];
-            } else {
-                if (!lastH.scoreOverrides) lastH.scoreOverrides = {};
-                lastH.scoreOverrides[p.name] = newTurnScore;
-            }
-
+            p.manualAdjustment = (p.manualAdjustment || 0) + delta;
             recalculateTeamScores();
             saveGameStateToStorage();
         }
 
         function recalculateTeamScores() {
-            gameParticipants.forEach(p => { p.score = 0; });
-            
             let isCoopMode = getCurrentIsCoopMode_();
+
+            gameParticipants.forEach(p => {
+                p.score = p.manualAdjustment || 0;
+            });
 
             gameHistory.forEach(h => {
                 gameParticipants.forEach(p => {
@@ -5645,7 +5553,8 @@
             gameParticipants.push({
                 name: name,
                 members: isTeamMode ? members : "",
-                score: 0
+                score: 0,
+                manualAdjustment: 0
             });
             
             inputName.value = "";
@@ -5875,7 +5784,7 @@
 
             // 🌟 距離企画以外は【履歴】も追加する
             if (gameCategory === "character") {
-                let chars = gameHistory.filter(h => h.category !== "distance" && h.char !== undefined).map(h => h.char);
+                let chars = gameHistory.filter(h => h.category !== "distance" && h.char != null).map(h => h.char);
                 if (chars.length > 0) {
                     let lines = [];
                     for (let i = 0; i < chars.length; i += 5) {
@@ -5890,7 +5799,7 @@
                     text += `\n【履歴】\n${lines.join("\n")}\n`;
                 }
             } else if (gameCategory === "shiritori") {
-                let turns = gameHistory.filter(h => h.category === "shiritori" && h.chars !== undefined);
+                let turns = gameHistory.filter(h => h.category === "shiritori" && Array.isArray(h.chars));
                 if (turns.length > 0) {
                     let lines = turns.map(h => h.chars.map(c => `「${c}」`).join("→"));
                     text += `\n【履歴】\n${lines.join("\n")}\n`;
@@ -6037,13 +5946,13 @@
             }
             
             let lastItem = gameHistory[gameHistory.length - 1];
-            let isShiritori = lastItem.category === "shiritori" || lastItem.chars !== undefined;
+            let isShiritori = Array.isArray(lastItem.chars);
             let displayLabel = "";
 
             if (isShiritori) {
                 displayLabel = lastItem.chars.map(c => `「${c}」`).join("→");
             } else if (lastItem.category === "distance") {
-                displayLabel = `📍お題: ${lastItem.odai}`;
+                displayLabel = `📍お題: ${lastItem.odai || "不明"}`;
             } else {
                 displayLabel = `「${lastItem.char}」`;
             }
@@ -6109,7 +6018,8 @@
                     alert("移行用テキストデータをクリップボードにコピーしました！");
                 });
             } catch (e) {
-                alert("エラーが発生しました。");
+                console.error(e);
+                alert("エラーが発生しました：" + (e && e.message ? e.message : e));
             }
         }
 
@@ -6125,7 +6035,20 @@
             if (!confirm("データを復元しますか？現在のデータは上書きされます。")) return;
 
             try {
-                let decoded = JSON.parse(inputText);
+                // 🌟 コピー＆ペースト時によくある事故を自動で吸収する
+                // 1. スマホ等の自動修正で「"」がスマート引用符（“ ” ' '）に変換されてしまうケース
+                // 2. LINEなどに一度貼った際、前後に余計な文字が混ざってしまうケース
+                let cleanedText = inputText
+                    .replace(/[\u201C\u201D]/g, '"')
+                    .replace(/[\u2018\u2019]/g, "'");
+
+                let firstBrace = cleanedText.indexOf("{");
+                let lastBrace = cleanedText.lastIndexOf("}");
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                    cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+                }
+
+                let decoded = JSON.parse(cleanedText);
                 gameTurn = decoded.turnCount !== undefined ? decoded.turnCount : 0;
                 
                 if (decoded.gameCategory) {
@@ -6146,16 +6069,6 @@
                     });
                 } else {
                     gameHistory = [];
-                }
-
-                if (decoded.players && Array.isArray(decoded.players)) {
-                    gameParticipants = decoded.players.map(p => ({
-                        name: p.name || "",
-                        score: p.score !== undefined ? p.score : 0,
-                        members: p.members || ""
-                    }));
-                } else {
-                    gameParticipants = [];
                 }
 
                 if(decoded.gameMode) document.getElementById("gameModeOption").value = decoded.gameMode;
@@ -6183,20 +6096,43 @@
                 if(decoded.distRankPoint_4) document.getElementById("distRankPoint_4").value = decoded.distRankPoint_4;
                 if(decoded.distRankPoint_5) document.getElementById("distRankPoint_5").value = decoded.distRankPoint_5;
                 if(decoded.distPitariMultiplier) document.getElementById("distPitariMultiplierInput").value = decoded.distPitariMultiplier;
+
+                // 🌟 参加枠の復元は、モード設定（チーム戦／協力戦など）を反映した後に行う。
+                // 復元した点数をそのまま維持できるよう、履歴から自動計算される分との差分を
+                // manualAdjustment として保持しておく（以後の +/- 操作でも点数がズレない）。
+                if (decoded.players && Array.isArray(decoded.players)) {
+                    let isCoopModeForImport = getCurrentIsCoopMode_();
+                    gameParticipants = decoded.players.map(p => {
+                        let name = p.name || "";
+                        let importedScore = p.score !== undefined ? p.score : 0;
+                        let autoScore = 0;
+                        gameHistory.forEach(h => {
+                            autoScore += getTurnScoreForParticipant_(h, name, isCoopModeForImport);
+                        });
+                        return {
+                            name: name,
+                            score: importedScore,
+                            members: p.members || "",
+                            manualAdjustment: importedScore - autoScore
+                        };
+                    });
+                } else {
+                    gameParticipants = [];
+                }
                 
                 let displayEl = document.getElementById("gameOdaisDisplay");
                 if (gameHistory.length > 0) {
                     let lastItem = gameHistory[gameHistory.length - 1];
-                    let isShiri = lastItem.category === "shiritori" || lastItem.chars !== undefined;
-                    let isDist = lastItem.category === "distance";
+                    let isShiri = Array.isArray(lastItem.chars);
+                    let isDist = !isShiri && lastItem.category === "distance";
                     let displayString = "";
 
                     if (isShiri) displayString = lastItem.chars.map(c => `「${c}」`).join("→");
-                    else if (isDist) displayString = lastItem.odai;
-                    else displayString = `「${lastItem.char}」`;
+                    else if (isDist) displayString = lastItem.odai || "不明";
+                    else displayString = `「${lastItem.char || ""}」`;
                     
                     displayEl.innerHTML = `<span style="font-size:14px; opacity:0.7;">前回の最後のお題</span><br><b style="font-size:26px; color:var(--primary-dark);">${escapeHtml(displayString)}</b>`;
-                    lastOdaiText = isShiri ? buildShiritoriOdaiText(lastItem) : (isDist ? lastItem.odai : `「${lastItem.char}」`);
+                    lastOdaiText = isShiri ? buildShiritoriOdaiText(lastItem) : (isDist ? (lastItem.odai || "") : `「${lastItem.char || ""}」`);
                 } else {
                     displayEl.innerHTML = `<span style="color:var(--text-muted);">ボタンを押してお題を引いてね！</span>`;
                     lastOdaiText = "";
@@ -6211,7 +6147,8 @@
                 textarea.value = ""; 
                 alert("復元が完了しました！");
             } catch (e) {
-                alert("解析に失敗しました。");
+                console.error(e);
+                alert("解析に失敗しました。\n\nエラー内容：" + (e && e.message ? e.message : e) + "\n\nコピーしたテキストの前後に余計な文字が入っていないか、テキストが途中で切れていないかを確認して、もう一度貼り付けてみてください。");
             }
         }
 
