@@ -3713,12 +3713,32 @@
                 .catch((err) => { if (err.code !== "cancelled") alert(describeAuthError(err)); });
         }
 
+        // 🌟 文字企画で、すでに履歴に出た文字の集合を取得する（しりとり企画・距離企画は対象外）
+        function getUsedCharsInHistory_() {
+            let used = new Set();
+            gameHistory.forEach(h => {
+                if (h.category === "character" && h.char) used.add(h.char);
+            });
+            return used;
+        }
+
+        // 🌟 距離企画で、すでにお題として出た駅の識別名（駅名（都道府県・鉄道会社））の集合を取得する
+        function getUsedDistanceOdaiNames_() {
+            let used = new Set();
+            gameHistory.forEach(h => {
+                if (h.category === "distance" && h.odai) used.add(h.odai);
+            });
+            return used;
+        }
+
         function initGamePools() {
             refreshCombinedStations();
             let includeSub = document.getElementById("gameSubOption").value === "yes";
             let charSet = new Set();
             
-            combinedStationsList.forEach(s => {
+            // 🌟 常用漢字・全駅文字モードの文字プールは、データベース公式の駅（allStations）のみから作る
+            // （個人が登録したカスタム駅の文字が紛れ込まないようにするため）
+            allStations.forEach(s => {
                 if (s.name) {
                     for (let c of s.name) charSet.add(c);
                 }
@@ -3780,30 +3800,50 @@
             if (slotInterval) return;
             refreshCombinedStations();
             let includeSub = document.getElementById("gameSubOption").value === "yes";
+            let usedChars = getUsedCharsInHistory_();
             
+            // 🌟 個人が登録したカスタム駅（データベース未登録駅）は対象外にする
             let namePool = [];
-            combinedStationsList.forEach(s => {
+            allStations.forEach(s => {
                 // 🌟 都道府県を識別するために駅名に含める
                 if (s.name) namePool.push({ mainName: s.name, displayName: `${s.name}（${s.company}・${s.pref}）` });
                 if (includeSub && s.subName) namePool.push({ mainName: s.subName, displayName: `${s.subName}（${s.company}・${s.pref}・副駅名）` });
             });
             
             if (namePool.length === 0) { alert("対象データがありません。"); return; }
-            
-            let target = namePool[Math.floor(Math.random() * namePool.length)];
-            let len = target.mainName.length;
-            let randIdx = Math.floor(Math.random() * len) + 1;
-            let finalChar = target.mainName.charAt(randIdx - 1);
-            
-            startSlotAnimation("rand", target.displayName, randIdx, finalChar);
+
+            // 🌟 すでに履歴に出た文字を除いた候補だけを対象にする
+            let candidates = [];
+            namePool.forEach(target => {
+                for (let i = 0; i < target.mainName.length; i++) {
+                    let ch = target.mainName.charAt(i);
+                    if (ch.trim() === "" || usedChars.has(ch)) continue;
+                    candidates.push({ target, idx: i + 1, char: ch });
+                }
+            });
+
+            if (candidates.length === 0) {
+                alert("まだ出ていない文字の組み合わせが見つかりませんでした（すでに全て出た可能性があります）。");
+                return;
+            }
+
+            let pick = candidates[Math.floor(Math.random() * candidates.length)];
+            startSlotAnimation("rand", pick.target.displayName, pick.idx, pick.char);
         }
 
         function drawJouyoKanji() {
             if (slotInterval) return;
             initGamePools();
             if (cachedKanjiChars.length === 0) { alert("漢字を抽出できませんでした。"); return; }
+
+            let usedChars = getUsedCharsInHistory_();
+            let pool = cachedKanjiChars.filter(c => !usedChars.has(c));
+            if (pool.length === 0) {
+                alert("まだ出ていない常用漢字の候補がありません（すでに全て出た可能性があります）。");
+                return;
+            }
             
-            let finalChar = cachedKanjiChars[Math.floor(Math.random() * cachedKanjiChars.length)];
+            let finalChar = pool[Math.floor(Math.random() * pool.length)];
             startSlotAnimation("jouyo", "", 0, finalChar);
         }
 
@@ -3811,8 +3851,15 @@
             if (slotInterval) return;
             initGamePools();
             if (cachedAllChars.length === 0) { alert("文字を抽出できませんでした。"); return; }
+
+            let usedChars = getUsedCharsInHistory_();
+            let pool = cachedAllChars.filter(c => !usedChars.has(c));
+            if (pool.length === 0) {
+                alert("まだ出ていない文字の候補がありません（すでに全て出た可能性があります）。");
+                return;
+            }
             
-            let finalChar = cachedAllChars[Math.floor(Math.random() * cachedAllChars.length)];
+            let finalChar = pool[Math.floor(Math.random() * pool.length)];
             startSlotAnimation("all", "", 0, finalChar);
         }
 
@@ -3893,8 +3940,9 @@
                     if (sObj) pool.push(sObj);
                 });
             } else {
-                // データベース全駅から抽選
-                pool = combinedStationsList;
+                // 🌟 データベース公式の駅（allStations）のみから抽選する
+                // （個人が登録したカスタム駅（データベース未登録駅）が紛れ込まないようにするため）
+                pool = allStations;
             }
 
             // 📍 距離企画は緯度経度（lat / lng）が必須のため、未登録の駅は抽選対象から除外する
@@ -3909,7 +3957,16 @@
                 return;
             }
 
-            let finalStation = poolWithCoords[Math.floor(Math.random() * poolWithCoords.length)];
+            // 🌟 すでにお題として出た駅は、再度抽選されないように除外する
+            let usedOdaiNames = getUsedDistanceOdaiNames_();
+            let unusedPool = poolWithCoords.filter(s => !usedOdaiNames.has(makeStationFullName(s)));
+
+            if (unusedPool.length === 0) {
+                alert("まだお題になっていない駅がありません（対象範囲の駅がすべて出た可能性があります）。");
+                return;
+            }
+
+            let finalStation = unusedPool[Math.floor(Math.random() * unusedPool.length)];
             startDistanceSlotAnimation(finalStation);
         }
 
@@ -3925,7 +3982,7 @@
             slotInterval = setInterval(() => {
                 count++;
                 if (type === "rand") {
-                    let randStation = combinedStationsList[Math.floor(Math.random() * combinedStationsList.length)];
+                    let randStation = allStations[Math.floor(Math.random() * allStations.length)];
                     let randIdx = Math.floor(Math.random() * randStation.name.length) + 1;
                     let randChar = randStation.name.charAt(randIdx - 1) || "？";
                     displayEl.innerHTML = `<span style="font-size:14px; opacity:0.8; font-weight:500;">${escapeHtml(randStation.name)}</span><br><b style="font-size:24px; color:var(--primary);">${randIdx}文字目 → 「${escapeHtml(randChar)}」</b>`;
@@ -4050,7 +4107,7 @@
 
             slotInterval = setInterval(() => {
                 count++;
-                let randStation = combinedStationsList[Math.floor(Math.random() * combinedStationsList.length)];
+                let randStation = allStations[Math.floor(Math.random() * allStations.length)];
                 displayEl.innerHTML = `<span style="font-size:12px; opacity:0.7;">距離お題抽選スロット</span><br><b style="font-size:20px; color:var(--primary);">${escapeHtml(randStation.name)}（${escapeHtml(randStation.pref)}）</b>`;
                 
                 if (count >= 30) {
