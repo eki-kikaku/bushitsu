@@ -1170,7 +1170,7 @@
                 <details class="rule-settings" open>
                 <summary class="rule-settings-toggle">⚙️ 距離企画ルール設定</summary>
                 <div class="rule-settings-body">
-                <p style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted);">「モード」はお題駅の抽選範囲だけでなく、メンバーがピンを置ける駅の範囲にも適用されます（マイ駅のみ：参加枠名と同じニックネームのメンバーの、マイ駅からしかピンを置けません）。</p>
+                <p style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted);">「モード」は、お題駅の抽選範囲には影響しません（お題駅は常にデータベース全体から抽選されます）。「モード」が決めるのは、メンバーがピンを置ける駅の範囲です（マイ駅のみ：参加枠名と同じニックネームのメンバーの、マイ駅からしかピンを置けません）。</p>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
                     <div>
                         <label style="font-size: 11px; color: var(--text-muted); font-weight: bold;">モード</label>
@@ -3928,32 +3928,17 @@
         function drawDistanceOdai() {
             if (slotInterval) return;
             refreshCombinedStations();
-            
-            let mode = document.getElementById("distModeOption").value;
-            let pool = [];
-            
-            if (mode === "myOwn") {
-                // マイ駅から抽選
-                let myOwnNames = getOwnStationsArray(currentUser);
-                myOwnNames.forEach(fullName => {
-                    let sObj = findStationByFullNameLoose(fullName);
-                    if (sObj) pool.push(sObj);
-                });
-            } else {
-                // 🌟 データベース公式の駅（allStations）のみから抽選する
-                // （個人が登録したカスタム駅（データベース未登録駅）が紛れ込まないようにするため）
-                pool = allStations;
-            }
+
+            // 🌟「モード」はお題駅の抽選範囲ではなく、メンバーがピンを置ける駅の範囲を決めるもの。
+            // お題駅自体は、モードに関わらず常にデータベース公式の駅（allStations）から抽選する
+            // （個人が登録したカスタム駅（データベース未登録駅）が紛れ込まないようにするため）
+            let pool = allStations;
 
             // 📍 距離企画は緯度経度（lat / lng）が必須のため、未登録の駅は抽選対象から除外する
             let poolWithCoords = pool.filter(s => hasValidCoords(s));
 
             if (poolWithCoords.length === 0) {
-                if (pool.length > 0) {
-                    alert("緯度経度（lat / lng）が登録されている駅がありません。stations.js に座標を登録してください。");
-                } else {
-                    alert("お題を抽選できる駅データがありません。");
-                }
+                alert("緯度経度（lat / lng）が登録されている駅がありません。stations.js に座標を登録してください。");
                 return;
             }
 

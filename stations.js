@@ -9303,7 +9303,7 @@ const allStations = [
   { no: 9301, name: "読売ランド前", kana: "よみうりらんどまえ", pref: "神奈川県", company: "小田急電鉄", line: "小田原線", subName: "", note: "", lat: 35.614723, lng: 139.527903 },
   { no: 9302, name: "蓬田", kana: "よもぎた", pref: "青森県", company: "東日本旅客鉄道", line: "津軽線", subName: "", note: "", lat: 40.969322, lng: 140.654569 },
   { no: 9303, name: "代々木", kana: "よよぎ", pref: "東京都", company: "東日本旅客鉄道", line: "中央本線/山手線", subName: "", note: "", lat: 35.683061, lng: 139.702042 },
-  { no: 9304, name: "代々木", kana: "よよぎ", pref: "大阪府", company: "東京都交通局", line: "大江戸線", subName: "", note: "", lat: 35.683061, lng: 139.702042 },
+  { no: 9304, name: "代々木", kana: "よよぎ", pref: "東京都", company: "東京都交通局", line: "大江戸線", subName: "", note: "", lat: 35.683061, lng: 139.702042 },
   { no: 9305, name: "代々木上原", kana: "よよぎうえはら", pref: "東京都", company: "小田急電鉄", line: "小田原線", subName: "", note: "", lat: 35.669028, lng: 139.679722 },
   { no: 9306, name: "代々木上原", kana: "よよぎうえはら", pref: "東京都", company: "東京地下鉄", line: "千代田線", subName: "", note: "", lat: 35.669028, lng: 139.679722 },
   { no: 9307, name: "代々木公園", kana: "よよぎこうえん", pref: "東京都", company: "東京地下鉄", line: "千代田線", subName: "", note: "", lat: 35.668944, lng: 139.691306 },
